@@ -1,0 +1,174 @@
+package de.connunity.util.challenge.listeners;
+
+import de.connunity.util.challenge.ChallengeUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+
+/**
+ * Handles portal travel to ensure players go to the correct Nether/End dimensions
+ * OPTIMIZED: Pre-loads destination chunks to prevent lag when traveling between dimensions
+ */
+public class PortalTravelListener implements Listener {
+    
+    private final ChallengeUtil plugin;
+    
+    public PortalTravelListener(ChallengeUtil plugin) {
+        this.plugin = plugin;
+    }
+    
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPortalTravel(PlayerPortalEvent event) {
+        // Only handle Nether and End portals
+        if (event.getCause() != TeleportCause.NETHER_PORTAL && 
+            event.getCause() != TeleportCause.END_PORTAL) {
+            return;
+        }
+        
+        String speedrunWorldName = plugin.getConfig().getString("world.speedrun-world", "speedrun_world");
+        World fromWorld = event.getFrom().getWorld();
+        
+        // Only handle portals from the speedrun world or its dimensions
+        if (fromWorld == null) {
+            return;
+        }
+        
+        String fromWorldName = fromWorld.getName();
+        boolean isSpeedrunWorld = fromWorldName.equals(speedrunWorldName) ||
+                                  fromWorldName.equals(speedrunWorldName + "_nether") ||
+                                  fromWorldName.equals(speedrunWorldName + "_the_end");
+        
+        if (!isSpeedrunWorld) {
+            return; // Not in speedrun world, let default behavior happen
+        }
+        
+        // Handle Nether portal
+        if (event.getCause() == TeleportCause.NETHER_PORTAL) {
+            World targetWorld;
+            
+            if (fromWorld.getEnvironment() == World.Environment.NORMAL) {
+                // Going from Overworld to Nether
+                String netherWorldName = speedrunWorldName + "_nether";
+                targetWorld = Bukkit.getWorld(netherWorldName);
+                
+                if (targetWorld == null) {
+                    plugin.getLogger().warning("Nether world not found: " + netherWorldName);
+                    plugin.getLogger().warning("Creating it now...");
+                    // This shouldn't happen if FullResetCommand works correctly
+                    return;
+                }
+                
+            } else if (fromWorld.getEnvironment() == World.Environment.NETHER) {
+                // Going from Nether to Overworld
+                targetWorld = Bukkit.getWorld(speedrunWorldName);
+                
+                if (targetWorld == null) {
+                    plugin.getLogger().warning("Speedrun world not found: " + speedrunWorldName);
+                    return;
+                }
+                
+            } else {
+                return; // Shouldn't happen
+            }
+            
+            // Calculate the correct destination
+            Location from = event.getFrom();
+            Location to;
+            
+            if (fromWorld.getEnvironment() == World.Environment.NORMAL) {
+                // Overworld -> Nether: divide by 8
+                to = new Location(targetWorld, 
+                        from.getX() / 8.0, 
+                        from.getY(), 
+                        from.getZ() / 8.0);
+            } else {
+                // Nether -> Overworld: multiply by 8
+                to = new Location(targetWorld, 
+                        from.getX() * 8.0, 
+                        from.getY(), 
+                        from.getZ() * 8.0);
+            }
+            
+            event.setTo(to);
+            
+            // OPTIMIZATION: Pre-load chunks at destination to prevent lag
+            preloadChunksAsync(targetWorld, to, event.getPlayer());
+            
+            plugin.getLogger().info(event.getPlayer().getName() + " traveling through Nether portal to " + targetWorld.getName());
+        }
+        
+        // Handle End portal
+        else if (event.getCause() == TeleportCause.END_PORTAL) {
+            World targetWorld;
+            
+            if (fromWorld.getEnvironment() == World.Environment.NORMAL) {
+                // Going from Overworld to End
+                String endWorldName = speedrunWorldName + "_the_end";
+                targetWorld = Bukkit.getWorld(endWorldName);
+                
+                if (targetWorld == null) {
+                    plugin.getLogger().warning("End world not found: " + endWorldName);
+                    plugin.getLogger().warning("Creating it now...");
+                    return;
+                }
+                
+                // Teleport to End spawn platform
+                Location to = new Location(targetWorld, 100, 49, 0);
+                event.setTo(to);
+                
+                // OPTIMIZATION: Pre-load End platform chunks
+                preloadChunksAsync(targetWorld, to, event.getPlayer());
+                
+            } else if (fromWorld.getEnvironment() == World.Environment.THE_END) {
+                // Going from End to Overworld (return portal after dragon)
+                targetWorld = Bukkit.getWorld(speedrunWorldName);
+                
+                if (targetWorld == null) {
+                    plugin.getLogger().warning("Speedrun world not found: " + speedrunWorldName);
+                    return;
+                }
+                
+                // Teleport to world spawn
+                Location to = targetWorld.getSpawnLocation();
+                event.setTo(to);
+                
+                // OPTIMIZATION: Pre-load spawn chunks
+                preloadChunksAsync(targetWorld, to, event.getPlayer());
+                
+            } else {
+                return; // Shouldn't happen
+            }
+            
+            plugin.getLogger().info(event.getPlayer().getName() + " traveling through End portal to " + targetWorld.getName());
+        }
+    }
+    
+    /**
+     * OPTIMIZATION: Pre-load chunks around the destination to prevent lag during teleportation
+     * Loads a 3x3 chunk area (centered on destination) asynchronously to avoid blocking the main thread
+     */
+    private void preloadChunksAsync(World world, Location destination, Player player) {
+        int centerChunkX = destination.getBlockX() >> 4;
+        int centerChunkZ = destination.getBlockZ() >> 4;
+        
+        // Load 3x3 chunks around destination (9 chunks total)
+        // This provides smooth transition without excessive chunk loading
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int chunkX = centerChunkX + dx;
+                int chunkZ = centerChunkZ + dz;
+                
+                // Load chunk asynchronously if not already loaded
+                if (!world.isChunkLoaded(chunkX, chunkZ)) {
+                    world.getChunkAtAsync(chunkX, chunkZ);
+                }
+            }
+        }
+    }
+}

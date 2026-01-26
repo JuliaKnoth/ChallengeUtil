@@ -1,0 +1,782 @@
+# Deutsche Sprachdatei für ChallengeUtil
+# German Language File for ChallengeUtil
+
+# Commands
+commands:
+  no-permission: "<red>Du hast keine Berechtigung, diesen Befehl zu verwenden!"
+  only-players: "<red>Nur Spieler können diesen Befehl verwenden!"
+  world-not-exist: "<red>Welt existiert nicht!"
+  world-not-exist-hint: "<yellow>Führe zuerst /fullreset aus."
+  reset-in-progress: "<red>✗ Ein Welt-Reset läuft gerade!"
+  reset-in-progress-wait: "<gray>  Bitte warte, bis der Reset abgeschlossen ist."
+
+# Start Command
+start:
+  already-running: "<yellow>Der Timer läuft bereits!"
+  timer-resumed: "<green>⏯ Timer fortgesetzt!"
+  timer-started: "<green>✓ Timer gestartet!"
+  cannot-start-during-reset: "<red>Der Timer kann während des Welt-Resets nicht gestartet werden!"
+  cannot-start-during-reset-wait: "<gray>Bitte warte, bis der Reset abgeschlossen ist..."
+  teleporting-players: "<aqua>Teleportiert {count} Spieler in die Welt."
+  starting-in: "<yellow>Startet in..."
+  go: "<green><bold>LOS!"
+  good-luck: "<gold>Viel Glück!"
+  get-ready: "<gray>Mach dich bereit..."
+  
+  # Welt/Reset Fehler
+  reset-in-progress: "<red>Der Timer kann während des Welt-Resets nicht gestartet werden!"
+  wait-for-reset: "<yellow>Bitte warte, bis der Reset abgeschlossen ist..."
+  world-not-exist: "<red>Welt existiert nicht!"
+  run-fullreset-first: "<yellow>Führe zuerst /fullreset aus."
+  teleported-players: "<aqua>Teleportiert {count} Spieler in die Welt."
+  
+  # Countdown-Nachrichten
+  countdown-starting: "<yellow>Startet in..."
+  countdown-number-yellow: "<yellow><bold>{seconds}"
+  countdown-number-red: "<red><bold>{seconds}"
+  get-ready-subtitle: "<gray>Mach dich bereit..."
+  go-title: "<green><bold>LOS!"
+  good-luck-subtitle: "<gold>Viel Glück!"
+  
+  # Team mode errors
+  both-modes-enabled: "<red>✗ Start nicht möglich! Manhunt und Team Race können nicht gleichzeitig aktiviert sein."
+  deactivate-one-mode: "<yellow>  Deaktiviere einen Modus in /settings > Herausforderungen"
+  both-modes-active: "<red>✗ Start nicht möglich! Manhunt und Team Race können nicht gleichzeitig aktiviert sein."
+  both-modes-active-hint: "<yellow>  Deaktiviere einen Modus in /settings > Herausforderungen"
+  
+  # Manhunt mode
+  manhunt-no-team-header: "<red>✗ Start nicht möglich! Manhunt-Modus ist aktiviert."
+  manhunt-all-must-choose: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
+  player-needs-team: "<gray>  • <red>{player}<gray> - muss {command} verwenden"
+  must-choose-team-warning: "<yellow><bold>⚠ Du musst ein Team wählen, bevor das Spiel starten kann!"
+  manhunt-team-command-hint: "<aqua>  Verwende /team runner, /team hunter, oder /team spectator"
+  no-runners: "<red>✗ Start nicht möglich! Kein Spieler im RUNNER-Team."
+  need-runner-hint: "<yellow>  Mindestens ein Spieler muss /team runner verwenden"
+  no-hunters: "<red>✗ Start nicht möglich! Kein Spieler im HUNTER-Team."
+  need-hunter-hint: "<yellow>  Mindestens ein Spieler muss /team hunter verwenden"
+  
+  manhunt-no-teams: "<red>✗ Start nicht möglich! Manhunt-Modus ist aktiviert."
+  manhunt-no-teams-hint: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
+  manhunt-must-choose: "<yellow><bold>⚠ Du musst ein Team wählen, bevor das Spiel starten kann!"
+  manhunt-must-choose-hint: "<aqua>  Verwende /team runner, /team hunter, oder /team spectator"
+  manhunt-use-team: "<gray>  muss /team <runner|hunter|spectator> verwenden"
+  manhunt-no-runners: "<red>✗ Start nicht möglich! Kein Spieler im RUNNER-Team."
+  manhunt-no-runners-hint: "<yellow>  Mindestens ein Spieler muss /team runner verwenden"
+  manhunt-no-hunters: "<red>✗ Start nicht möglich! Kein Spieler im HUNTER-Team."
+  manhunt-no-hunters-hint: "<yellow>  Mindestens ein Spieler muss /team hunter verwenden"
+  
+  # Team race mode
+  teamrace-no-team-header: "<red>✗ Start nicht möglich! Team Race Modus ist aktiviert."
+  teamrace-all-must-choose: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
+  teamrace-team-command-hint: "<aqua>  Verwende /team um verfügbare Teams zu sehen"
+  invalid-team-config: "<red>✗ Start nicht möglich! Ungültige Team-Konfiguration."
+  min-teams-needed: "<yellow>  Mindestens 2 Teams benötigt. Aktuell: {count}"
+  max-teams-exceeded: "<yellow>  Maximal 10 Teams erlaubt. Aktuell: {count}"
+  
+  teamrace-no-teams: "<red>✗ Start nicht möglich! Team Race Modus ist aktiviert."
+  teamrace-no-teams-hint: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
+  teamrace-must-choose: "<yellow><bold>⚠ Du musst ein Team wählen, bevor das Spiel starten kann!"
+  teamrace-must-choose-hint: "<aqua>  Verwende /team um verfügbare Teams zu sehen"
+  teamrace-use-team: "<gray>  muss /team <Teamname> verwenden"
+  teamrace-invalid-config: "<red>✗ Start nicht möglich! Ungültige Team-Konfiguration."
+  teamrace-min-teams: "<yellow>  Mindestens 2 Teams benötigt. Aktuell: {count}"
+  teamrace-max-teams: "<yellow>  Maximal 10 Teams erlaubt. Aktuell: {count}"
+  
+  # Hunter restrictions
+  hunter-restrictions-header: "<gold><bold>⚠ JÄGER-Einschränkungen:"
+  hunter-headstart: "<yellow>  • Runner haben 2 Minuten Vorsprung"
+  hunter-compass-unlock: "<gray>  • Nach 10 Minuten: Kompass"
+  hunter-restrictions: "<gold><bold>⚠ JÄGER-Einschränkungen:"
+  hunter-compass-time: "<gray>  • Nach 10 Minuten: Kompass"
+
+# Pause Command
+pause:
+  not-running: "<yellow>Der Timer läuft nicht!"
+  timer-paused: "<yellow>⏸ Timer pausiert!"
+  timer-already-paused: "<yellow>Der Timer ist bereits pausiert!"
+  cannot-pause-during-reset: "<red>Der Timer kann während des Welt-Resets nicht pausiert werden!"
+  cannot-pause-during-reset-wait: "<gray>Bitte warte, bis der Reset abgeschlossen ist..."
+
+# Reset Command
+reset:
+  timer-reset: "<green>Timer reset! (Gestoppt und auf 00:00:00 zurückgesetzt)"
+  teams-cleared: "<yellow>Teams gelöscht! Spieler können mit /team erneut beitreten"
+
+# Team Command
+team:
+  no-mode-active: "<red>✗ Kein Team-Modus ist aktiviert!"
+  no-mode-active-hint: "<gray>  Aktiviere Manhunt oder Team Race in /settings > Herausforderungen"
+  
+  # Manhunt mode
+  manhunt-usage: "<yellow>Verwendung: /team <runner|hunter|spectator>"
+  manhunt-invalid: "<red>✗ Ungültiges Team! Wähle: runner, hunter, oder spectator"
+  manhunt-locked: "<red>✗ Du kannst die Teams nicht wechseln, sobald das Spiel gestartet wurde!"
+  manhunt-locked-hint: "<gray>  Teams sind gesperrt, bis das Spiel zurückgesetzt wird."
+  
+  manhunt-joined-runner: "<green>✓ Du bist <light_purple><bold>RUNNERN<green> beigetreten!"
+  manhunt-joined-runner-goal: "<gray>  Dein Ziel: Besiege den Enderdrachen!"
+  manhunt-joined-runner-wait: "<yellow>  Warte auf den Start mit /start"
+  
+  manhunt-joined-hunter: "<green>✓ Du bist <gold><bold>HUNTERN<green> beigetreten!"
+  manhunt-joined-hunter-goal: "<gray>  Dein Ziel: Eliminiere alle Runner!"
+  manhunt-joined-hunter-wait: "<yellow>  Warte auf den Start mit /start"
+  manhunt-joined-hunter-compass: "<aqua>  Du erhältst einen Tracking-Kompass, wenn das Spiel startet"
+  manhunt-joined-hunter-blind: "<red>  Du hast 2 Minuten Blindheit & kannst dich nicht bewegen!"
+  manhunt-joined-hunter-compass-received: "<aqua>  Du hast einen Tracking-Kompass erhalten!"
+  
+  manhunt-joined-spectator: "<green>✓ Du bist <gray><bold>ZUSCHAUERN<green> beigetreten!"
+  manhunt-joined-spectator-info: "<gray>  Du bist im Zuschauermodus und nimmst nicht am Spiel teil."
+  
+  # Team race mode
+  teamrace-invalid: "<red>✗ Ungültiges Team! Verfügbare Teams:"
+  teamrace-locked: "<red>✗ Du kannst die Teams nicht wechseln, sobald das Spiel gestartet wurde!"
+  teamrace-locked-hint: "<gray>  Teams sind gesperrt, bis das Spiel zurückgesetzt wird."
+  
+  teamrace-joined: "<green>✓ Du bist Team {team} beigetreten!"
+  teamrace-joined-goal: "<gray>  Dein Ziel: Besiege den Enderdrachen!"
+  teamrace-joined-wait: "<yellow>  Warte auf den Start mit /start"
+  teamrace-joined-compass: "<aqua>  Du erhältst einen Tracking-Kompass, wenn das Spiel startet"
+  teamrace-joined-compass-received: "<aqua>  Du hast einen Tracking-Kompass erhalten!"
+  
+  # Team list
+  teamrace-list-header: "<gold><bold>═══ Verfügbare Teams ═══"
+  teamrace-list-team: "<gray>  • Team {team}"
+  teamrace-available-teams-header: "<gold><bold>═══ Verfügbare Teams ═══"
+  teamrace-team-members: "<gray> ({count} Spieler)"
+  teamrace-join-hint: "<yellow>Nutze <gold>/team <Teamname><yellow> zum Beitreten"
+  teamrace-join-example: "<gray>Beispiel: <white>/team Rot"
+  teamrace-joined-wait: "<yellow>  Warte auf den Start mit /start"
+  teamrace-joined-compass: "<aqua>  Du erhältst einen Tracking-Kompass, wenn das Spiel startet"
+  teamrace-joined-compass-received: "<aqua>  Du hast einen Tracking-Kompass erhalten!"
+  
+  # Team list
+  teamrace-list-header: "<gold><bold>═══ Verfügbare Teams ═══"
+  teamrace-list-team: "<gray>  • Team {team}"
+  teamrace-list-players: "<gray> ({count} Spieler)"
+  teamrace-list-usage: "<yellow>Nutze <gold>/team <Teamname><yellow> zum Beitreten"
+  teamrace-list-example: "<gray>Beispiel: <white>/team Rot"
+
+# Settings Command
+settings:
+  only-in-waiting-room: "<red>Du kannst nur im Warteraum auf die Einstellungen zugreifen!"
+
+# Join Command
+join:
+  already-in-speedrun: "<yellow>Du bist bereits in der Speedrun-Welt!"
+  teleported: "<green>Willkommen in der Speedrun-Welt!"
+  world-not-exist: "<red>Die Speedrun-Welt existiert nicht!"
+  world-not-exist-hint: "<yellow>Bitte warte, bis ein Admin /fullreset ausführt."
+  watch-mode: "<gray>Zuschauermodus aktiviert 👁"
+  good-luck-emoji: "<gold>Viel Glück! ⚡"
+
+# Full Reset Command
+fullreset:
+  starting: "<gold><bold>═══════════════════════════════════\n<red><bold>SPEEDRUN-RESET WIRD AUSGEFÜHRT\n<yellow>Neuer Seed: {seed}\n<yellow>Teleportiere in den Warteraum...\n<gold><bold>═══════════════════════════════════"
+  complete: "<gold><bold>═══════════════════════════════════\n<green><bold>WELT-RESET ABGESCHLOSSEN!\n<yellow>Wir verbinden dich zurück...\n<gold><bold>═══════════════════════════════════"
+  countdown: "<yellow><bold>Reset in {seconds} Sekunden..."
+
+# Settings GUI
+gui:
+  settings:
+    title: "⚙ Challenge-Einstellungen"
+    
+    # Info item
+    info-title: "<aqua><bold>ℹ Einstellungen"
+    info-lore:
+      - ""
+      - "<gray>Konfiguriere Challenge-Einstellungen"
+      - "<gray>für deine Speedrun-Welt."
+      - ""
+      - "<green>Einstellungen werden gespeichert"
+      - "<green>und bleiben über Resets erhalten."
+      - ""
+      - "<yellow>Einige Einstellungen erfordern"
+      - "<yellow>/fullreset, um wirksam zu werden."
+      - ""
+      - "<gray>Nur verfügbar im"
+      - "<gray>Warteraum."
+    
+    # Challenges menu button
+    challenges-title: "<light_purple><bold>⚔ Herausforderungen"
+    challenges-lore:
+      - ""
+      - "<gray>Aktiviere spezielle Challenge-Modi"
+      - "<gray>für extra Schwierigkeit!"
+      - ""
+      - "<yellow>Klicken zum Öffnen"
+    
+    # Gamerules menu button
+    gamerules-title: "<gold><bold>⚙ Spielregeln"
+    gamerules-lore:
+      - ""
+      - "<gray>Konfiguriere Minecraft-Spielregeln"
+      - "<gray>für die Speedrun-Welt"
+      - ""
+      - "<yellow>Klicken zum Öffnen"
+    
+    # Structures setting
+    structures:
+      name: "Strukturen generieren"
+      lore-desc: "<gray>Dörfer, Tempel, Festungen, etc."
+      lore-status: "<gray>Status: {status}"
+      lore-click: "<yellow>Klicken zum Umschalten"
+      lore-warning: "<yellow>⚠ Erfordert /fullreset um wirksam zu werden"
+    
+    # Respawn setting
+    respawn-title: "<red>☠ Respawn: {status}"
+    respawn-enabled: "<green>Aktiviert"
+    respawn-disabled: "<red>Deaktiviert"
+    respawn-lore:
+      - ""
+      - "<gray>Ermöglicht Spielern den Respawn"
+      - "<gray>nach dem Tod (Hardcore-Modus)"
+      - ""
+      - "<gray>Status: {status}"
+      - ""
+      - "<yellow>Klicken zum Umschalten"
+      - ""
+      - "<green><italic>✓ Wird sofort übernommen"
+    
+    # Difficulty
+    difficulty:
+      name: "Schwierigkeit"
+      current: "<gray>Aktuell: {difficulty}"
+      click-to-change: "<gray>Klicken, um zu wechseln:"
+      peaceful: "  • Friedlich"
+      easy: "  • Einfach"
+      normal: "  • Normal"
+      hard: "  • Schwer"
+      applied-immediately: "<green><italic>✓ Wird sofort übernommen"
+    
+    # Respawn in gamerules
+    respawn:
+      name: "Respawn erlauben"
+      enabled-desc1: "<gray>Spieler spawnen nach dem Tod wieder"
+      enabled-desc2: "<gray>und können weiterspielen"
+      disabled-desc1: "<gray>Spieler werden Zuschauer"
+      disabled-desc2: "<gray>nach dem Tod (Hardcore-Modus)"
+      status: "<gray>Status: {status}"
+      click-toggle: "<yellow>Klicken zum Umschalten"
+      applied: "<green><italic>✓ Wird sofort übernommen"
+    
+    # Gamerules submenu
+    gamerules:
+      title: "Gamerules"
+      name: "⚙ Gamerules"
+      lore-desc1: "<gray>Welt-Gamerules konfigurieren"
+      lore-desc2: "<gray>für die Speedrun-Welt."
+      lore-click: "<yellow>Klicken zum Öffnen"
+      status: "<gray>Status: {status}"
+      current: "<gray>Aktuell: {value}"
+      click-toggle: "<yellow>Klicken zum Umschalten"
+      click-increase: "<green>Linksklick: +1"
+      click-decrease: "<red>Rechtsklick: -1"
+      shift-increase: "<green>Shift+Linksklick: +10"
+      shift-decrease: "<red>Shift+Rechtsklick: -10"
+      saved: "<green><italic>✓ Gespeichert & wird bei Welterstellung angewendet"
+      back: "<yellow>← Zurück zu den Einstellungen"
+      
+      # Gamerule descriptions
+      descriptions:
+        keep_inventory: "Items beim Tod behalten"
+        natural_health_regeneration: "Natürliche Gesundheitserholung"
+        immediate_respawn: "Sofort-Respawn (kein Todesscreen)"
+        players_sleeping_percentage: "% der Spieler benötigt zum Schlafen"
+        locator_bar: "Lokalisierungsleiste anzeigen"
+        spawn_mobs: "Feindliche Mobs spawnen"
+        spawn_monsters: "Monster spawnen"
+        spawn_patrols: "Patrouillen (Plünderer)"
+        spawn_wandering_traders: "Wanderhändler"
+        spawn_wardens: "Warden spawnen"
+        spawner_blocks_work: "Spawner funktionieren"
+        mob_griefing: "Mob-Griefing (Creeper, Endermen)"
+        advance_time: "Tag-Nacht-Zyklus"
+        advance_weather: "Wettereinflüsse"
+        random_tick_speed: "Random-Tick-Geschwindigkeit (Standard 3)"
+        tnt_explodes: "TNT explodiert"
+        raids: "Plünderungen aktivieren"
+        forgive_dead_players: "Tote Spieler vergeben"
+        fall_damage: "Fallschaden"
+        fire_damage: "Feuerschaden"
+        drowning_damage: "Ertrinkungsschaden"
+        freeze_damage: "Frierschaden"
+        block_drops: "Blöcke droppen Items"
+        entity_drops: "Entitäten droppen Items"
+        mob_drops: "Mobs dropen Beute"
+        limited_crafting: "Erfordert freigeschaltetes Rezept"
+    
+    # Challenges submenu
+    challenges:
+      title: "Herausforderungen"
+      name: "🎯 Herausforderungen"
+      lore-desc1: "<gray>Spezielle Challenge-Modi aktivieren"
+      lore-desc2: "<gray>für zusätzliche Schwierigkeit."
+      lore-click: "<yellow>Klicken zum Öffnen"
+      status: "<gray>Status: {status}"
+      enabled: "<green>Aktiviert"
+      disabled: "<red>Deaktiviert"
+      click-toggle: "<yellow>Klicken zum Umschalten"
+      applied-on-start: "<green><italic>✓ Wird bei /start angewendet"
+      back: "<yellow>← Zurück zu den Einstellungen"
+      
+      # Challenge descriptions
+      manhunt_mode:
+        name: "Manhunt-Modus aktivieren"
+        hint1: "<aqua><italic>Nutze /team runner oder /team hunter"
+        hint2: "<gray><italic>Teams vor /start wählen"
+        hint3: "<gray><italic>Jäger 2 Minuten lang bewegungsunfähig"
+        warning-teamrace: "<red><bold>⚠ Team Race Modus ist aktiv!"
+        auto-disable: "<yellow><italic>Wird automatisch deaktiviert"
+      team_race_mode:
+        name: "Team Race Modus - 2-10 Teams"
+        hint1: "<aqua><italic>Nutze /team <Teamname> zum Beitreten"
+        hint2: "<gray><italic>2-10 Teams rennen zum Enderdrachen"
+        hint3: "<gold><italic>Kompasse zeigen auf nächstes Team"
+        warning-manhunt: "<red><bold>⚠ Manhunt Modus ist aktiv!"
+        auto-disable: "<yellow><italic>Wird automatisch deaktiviert"
+      chunk_items:
+        name: "Zufälliges Item pro Chunk erhalten"
+      friendly_fire_item:
+        name: "Friendly Fire = OP Items"
+        hint1: "<aqua><italic>Schaden wird im Team synchronisiert"
+        hint2: "<gold><italic>Niedrigere HP = Bessere Items"
+      one_heart:
+        warning: "<red><italic>⚠ Sehr schwierig!"
+      half_health:
+        warning: "<red><italic>⚠ Sehr schwierig!"
+      no_mining:
+        warning: "<red><italic>⚠ Extrem einschränkend!"
+      no_crafting:
+        warning: "<red><italic>⚠ Extrem einschränkend!"
+    
+    # Back button
+    back:
+      name: "← Zurück"
+      lore-desc: "<gray>Zurück zu den Host-Controls"
+    
+    # Reset button
+    reset:
+      name: "↻ Einstellungen zurücksetzen"
+      lore-desc1: "<gray>Alle Einstellungen auf"
+      lore-desc2: "<gray>Standardwerte zurücksetzen"
+      lore-click: "<yellow>Klicken zum Zurücksetzen"
+    
+    # Reset confirmation
+    reset-confirm:
+      title: "Zurücksetzen der Einstellungen bestätigen"
+      yes-name: "✓ ZURÜCKSETZEN BESTÄTIGEN"
+      yes-desc1: "<gray>Ja, alle Einstellungen zurücksetzen"
+      yes-desc2: "<gray>auf Standardwerte."
+      yes-click: "<green>Klicken zum Bestätigen"
+      no-name: "✗ ABBRECHEN"
+      no-desc1: "<gray>Nein, Einstellungen behalten"
+      no-desc2: "<gray>"
+      no-click: "<yellow>Klicken zum Abbrechen"
+      warning-name: "⚠ WARNUNG"
+      warning-desc1: "<gray>Dies stellt alle"
+      warning-desc2: "<gray>Einstellungen auf Standard zurück!"
+      warning-desc3: "<red>Diese Aktion kann nicht"
+      warning-desc4: "<red>rückgängig gemacht werden!"
+
+  
+  challenges:
+    title: "⚔ Herausforderungen"
+    
+    # Challenge types
+    manhunt-title: "Manhunt-Modus"
+    manhunt-description: "Runner vs. Hunter Team-Modus"
+    
+    teamrace-title: "Team Race Modus"
+    teamrace-description: "Mehrere Teams wetteifern um den Enderdrachen"
+    
+    chunk-items-title: "Chunk Items Challenge"
+    chunk-items-description: "Items werden beim Betreten neuer Chunks gedroppt"
+    
+    friendly-fire-item-title: "Friendly Fire Item"
+    friendly-fire-item-description: "Schaden wird im Team synchronisiert"
+    friendly-fire-item-hint: "<aqua><italic>Schaden wird im Team synchronisiert"
+    friendly-fire-item-hint2: "<gold><italic>Niedrigere HP = Bessere Items"
+    
+    one-heart-title: "Ein Herz Challenge"
+    one-heart-description: "Nur 1 Herz Gesundheit"
+    one-heart-warning: "<red><italic>⚠ Sehr schwierig!"
+    
+    half-health-title: "Halbe Gesundheit"
+    half-health-description: "Nur 5 Herzen statt 10"
+    half-health-warning: "<red><italic>⚠ Sehr schwierig!"
+    
+    no-mining-title: "Kein Abbau"
+    no-mining-description: "Blöcke können nicht abgebaut werden"
+    no-mining-warning: "<red><italic>⚠ Extrem einschränkend!"
+    
+    no-crafting-title: "Kein Crafting"
+    no-crafting-description: "Items können nicht hergestellt werden"
+    no-crafting-warning: "<red><italic>⚠ Extrem einschränkend!"
+    
+    status: "<gray>Status: {status}"
+    enabled: "<green>Aktiviert"
+    disabled: "<red>Deaktiviert"
+    click-to-toggle: "<yellow>Klicken zum Umschalten"
+    saved-note: "<green><italic>✓ Gespeichert & gilt sofort (kein Reset nötig)"
+  
+  gamerules:
+    title: "⚙ Spielregeln"
+    
+    # Gamerule descriptions
+    immediate-respawn: "Sofort-Respawn (kein Todesscreen)"
+    players-sleeping-percentage: "% der Spieler benötigt zum Schlafen"
+    locator-bar: "Lokalisierungsleiste anzeigen"
+    spawn-mobs: "Feindliche Mobs spawnen"
+    spawn-animals: "Passive Tiere spawnen"
+    natural-regeneration: "Natürliche Regeneration"
+    keep-inventory: "Inventar beim Tod behalten"
+    announce-advancements: "Fortschritte ankündigen"
+    do-daylight-cycle: "Tag/Nacht-Zyklus"
+    do-weather-cycle: "Wetter-Zyklus"
+    random-tick-speed: "Zufällige Tick-Geschwindigkeit"
+    raids: "Überfälle aktiviert"
+    mob-griefing: "Mob-Zerstörung"
+    block-drops: "Blöcke droppen Items"
+    entity-drops: "Entitäten droppen Items"
+    mob-drops: "Mobs dropen Beute"
+    limited-crafting: "Erfordert freigeschaltetes Rezept"
+    
+    # Difficulty
+    difficulty: "Schwierigkeit"
+    difficulty-peaceful: "Friedlich"
+    difficulty-easy: "Einfach"
+    difficulty-normal: "Normal"
+    difficulty-hard: "Schwer"
+    difficulty-click: "<gray>Klicken, um zu wechseln:"
+    
+    # Status
+    status-enabled: "<green>Aktiviert"
+    status-disabled: "<red>Deaktiviert"
+    status-current: "<gray>Aktuell: <yellow>{value}"
+    
+    # Actions
+    click-to-toggle: "<yellow>Klicken zum Umschalten"
+    click-left-plus-one: "<green>Linksklick: +1"
+    click-right-minus-one: "<red>Rechtsklick: -1"
+    click-shift-left-plus-ten: "<green>Shift+Linksklick: +10"
+    click-shift-right-minus-ten: "<red>Shift+Rechtsklick: -10"
+    
+    # Notes
+    saved-and-applied: "<green><italic>✓ Gespeichert & wird bei Welterstellung angewendet"
+    applied-immediately: "<green><italic>✓ Wird sofort übernommen"
+
+# Manhunt
+manhunt:
+  compass-tracking: "<gold><bold>Tracking: <yellow>{target}"
+  headstart-title: "<red><bold>⏱ VORSPRUNG-PHASE"
+  headstart-subtitle: "<yellow>Jäger sind geblendet & gelähmt"
+  headstart-over-title: "<green><bold>✓ VORSPRUNG VORBEI!"
+  headstart-over-subtitle: "<gold>Jäger können sich jetzt bewegen!"
+  runner-death: "<red><bold>☠ Alle Runner sind tot!"
+  runner-death-sub: "<gold>Jäger haben gewonnen!"
+  hunter-get-compass-title: "<aqua><bold>✓ KOMPASS FREIGESCHALTET!"
+  hunter-get-compass-sub: "<yellow>Rechtsklick zum Tracking!"
+
+# Team Race
+teamrace:
+  team-win: "<gold><bold>═══════════════════════════════\n{team}<bold> HAT GEWONNEN!\n<yellow>Der Enderdrache wurde besiegt!\n<gold><bold>═══════════════════════════════"
+  compass-tracking: "<gold><bold>Tracking: <yellow>{target} <gray>({team})"
+
+# Death Messages
+death:
+  player-death: "<red>☠ <gray>{player} ist gestorben!"
+  respawn-disabled: "<red>Respawn ist deaktiviert! Du bist nun Zuschauer."
+  gamemode-spectator: "<gray>Du bist jetzt im Zuschauermodus."
+
+# Ender Dragon
+dragon:
+  death-title: "<gold><bold>ENDERDRACHE BESIEGT!"
+  death-subtitle: "<yellow>Geschafft!"
+
+# Waiting Room
+waitingroom:
+  cannot-break: "<red>Du kannst Blöcke im Warteraum nicht abbauen!"
+  cannot-place: "<red>Du kannst Blöcke im Warteraum nicht platzieren!"
+  cannot-damage: "<red>Du kannst Spieler im Warteraum nicht verletzen!"
+  cannot-interact: "<red>Du kannst damit im Warteraum nicht interagieren!"
+
+# Portal Travel
+portal:
+  creating-nether: "<yellow>Erzeuge Nether-Welt..."
+  nether-ready: "<green>Nether-Welt bereit!"
+  creating-end: "<yellow>Erzeuge End-Welt..."
+  end-ready: "<green>End-Welt bereit!"
+
+# Chunk Item Challenge
+chunk:
+  new-chunk-entered: "<yellow>Neuer Chunk betreten!"
+  item-dropped: "<green>+ {item}"
+
+# Team Colors (for Team Race)
+teams:
+  red: "Rot"
+  blue: "Blau"
+  green: "Grün"
+  yellow: "Gelb"
+  purple: "Lila"
+  orange: "Orange"
+  pink: "Pink"
+  cyan: "Cyan"
+  white: "Weiß"
+  black: "Schwarz"
+
+# Placeholders
+placeholders:
+  runner-prefix: "<light_purple><bold>[RUNNER] "
+  hunter-prefix: "<gold><bold>[HUNTER] "
+  spectator-prefix: "<gray>[ZUSCHAUER] "
+
+# Manhunt Manager
+manhunt:
+  blindness-over: "<green>✓ Deine Blindheit ist vorbei!"
+  can-see-and-move: "<gray>  Du kannst nun sehen und dich frei bewegen!"
+  compass-charged: "<green>✨ Kompass ist aufgeladen!"
+  runners-glowing: "<aqua>✨ Runner leuchten jetzt!"
+  you-are-glowing: "<red><bold>⚠ Du leuchtest!"
+  
+  # Compass messages
+  compass-name: "<gold><bold>Runner-Tracker"
+  compass-charged-status: "<green>✓ Aufgeladen!"
+  compass-charging-status: "<yellow>⏳ Kompas läd auf..."
+  compass-ready-hint: "<gray>Rechtsklick, wenn bereit"
+  compass-track-runners: "<gray>Rechtsklick zum Verfolgen von Runnern"
+  compass-show-runners: "<gray>Rechtsklick um Runner anzuzeigen."
+  compass-loading: "<yellow>⏳ Lädt..."
+  
+  # Dimension messages
+  runners-in-end: "<dark_purple>🌌 Alle Runner sind im End!"
+  runners-in-overworld: "<green>🌍 Alle Runner sind in der Oberwelt!"
+  runners-in-nether: "<light_purple>🌀 Alle Runner sind im Nether!"
+
+# Team Race Manager
+teamrace:
+  team-won-title: "<bold>TEAM {team} GEWONNEN!"
+  dragon-defeated-subtitle: "<gray>hat den Enderdrachen besiegt!"
+  game-over-divider: "<gold><strikethrough>═══════════════════════════════════"
+  game-over-title: "<bold>         SPIEL VORBEI         "
+  winner-label: "<gray>    Gewinner: "
+  
+  # Compass messages
+  compass-name: "<bold>Team-Tracker"
+  compass-points-to: "<gray>Zeigt auf das nächste feindliche Team"
+  compass-your-team: "<gray>Dein Team: "
+  compass-tracking: "<bold>Team-Tracker <gray>→ "
+  compass-points-label: "<gray>Zeigt auf: "
+
+# Player Death Messages
+death:
+  you-are-dead: "<red><bold>DU BIST TOT"
+  now-spectator: "<gray>Du bist jetzt Zuschauer"
+  respawn-disabled-spectator: "<gray>Respawn deaktiviert - du bist jetzt Zuschauer"
+  divider: "<dark_red>═══════════════════════════════════"
+  
+  # Manhunt victory
+  hunters-won-title: "<gold><bold>TEAM HUNTER HAT GEWONNEN!"
+  hunters-won-subtitle: "<yellow>Alle Runner wurden eliminiert"
+  runners-won-title: "<light_purple><bold>TEAM RUNNER HAT GEWONNEN!"
+  runners-won-subtitle: "<dark_purple>Der Enderdrache wurde besiegt!"
+  
+  # Team labels
+  winner-hunters: "HUNTER"
+  winner-runners: "RUNNER"
+
+# Ender Dragon Death
+dragon:
+  hunters-won-title: "<gold><bold>TEAM HUNTERS WON!"
+  hunters-won-subtitle: "<yellow>All runners have been eliminated"
+  runners-won-title: "<light_purple><bold>TEAM RUNNERS WON!"
+  runners-won-subtitle: "<dark_purple>The Ender Dragon has been slain!"
+  game-over: "<bold>         SPIEL VORBEI         "
+  winner: "<gray>    Gewinner: "
+
+# Chunk Item Challenge
+chunkitem:
+  inventory-full: "<red>⚠ <yellow>Inventar voll! Chunk-Item übersprungen: <gray>{item}"
+  item-received: "<gold>📦 <green>Chunk-Item erhalten: <aqua>{item}"
+
+# Movement/PvP Restrictions
+restrictions:
+  cannot-move-yet: "<yellow>⚠ You cannot move yet! Wait <red>{seconds}s<yellow> (Blindness period)"
+  pvp-disabled: "<red>✗ PvP ist deaktiviert bis die Challenge startet!"
+  cannot-damage-teammate: "<red>✗ You cannot damage your teammate!"
+  cannot-damage-teammate-teamrace: "<red>✗ Du kannst deinen Teamkollegen nicht schaden!"
+
+# Compass Tracking
+compass:
+  charge-activated: "<gold>⚡ Kompass Charge aktiviert!"
+  cooldown: "<gray>⏳ Kompass cooldown: {time}"
+  not-charged: "<gray>⏳ Kompass ist noch nicht aufgeladen..."
+  cannot-drop: "<red>✗ Den Tracker kannst du nicht fallen lassen!"
+
+# Friendly Fire
+friendlyfire:
+  penalty-victim: "<gold>⚠ 30 Sekunden Strafe: Keine Friendly Fire Items!"
+  penalty-attacker: "<yellow>⚠ Friendly Fire auf {player}!"
+  penalty-time-remaining: "<red>⚠ Friendly Fire Strafe: Noch {seconds} Sekunden bis Items wieder erscheinen!"
+
+# Host Controls
+host:
+  no-permission-item: "<red>Du hast keine Berechtigung, dieses Item zu verwenden!"
+  no-permission-gui: "<red>Du hast keine Berechtigung, auf die Host-Kontrollen zuzugreifen!"
+  reset-in-progress: "<red>✗ Ein Welt-Reset läuft gerade!"
+  reset-wait: "<gray>  Bitte warte, bis der Reset abgeschlossen ist."
+  executing-reset: "<yellow>Führe vollständigen Reset aus..."
+  reset-cancelled: "<yellow>Vollständiger Reset abgebrochen"
+  
+# Settings GUI  
+settings:
+  reset-to-default: "<green>✓ Einstellungen auf Standard zurückgesetzt!"
+  reset-cancelled: "<yellow>Zurücksetzung abgebrochen"
+  difficulty-set: "<green>✓ Schwierigkeit auf {difficulty} gesetzt"
+  difficulty-applied: "<gray>  (Sofort auf Speedrun-Welt angewendet)"
+  structures-toggled: "<green>✓ Strukturerzeugung {status}"
+  structures-saved: "<gray>  (Gespeichert - wirkt nach /fullreset)"
+  respawn-toggled: "<green>✓ Respawn {status}"
+  respawn-enabled-desc: "<gray>  Spieler spawnen nach dem Tod wieder"
+  respawn-disabled-desc: "<gray>  Spieler werden Zuschauer nach dem Tod (Hardcore-Modus)"
+  respawn-applied: "<gray>  (Gespeichert - wirkt sofort)"
+  gamerule-unknown: "<red>✗ Unbekannte Gamerule"
+  gamerule-unavailable: "<red>✗ Gamerule nicht verfügbar: {gamerule}"
+  gamerule-set: "<green>✓ {gamerule} <gray>gesetzt auf {value}"
+  gamerule-saved: "<gray>  (Gespeichert - wirkt nach /fullreset)"
+  challenge-toggled: "<green>✓ {challenge} {status}"
+  challenge-saved: "<gray>  (Herausforderung wird bei nächstem /start angewendet)"
+  mode-switched-warning: "<yellow>⚠ {mode} <gold>Modus wurde automatisch deaktiviert <gray>(nur ein Modus kann aktiv sein)"
+  teams-reset: "<green>✓ <gray>Teams wurden zurückgesetzt"
+
+# Common terms
+common:
+  enabled: "Aktiviert"
+  disabled: "Deaktiviert"
+  "on": "AN"
+  "off": "AUS"
+  status: "Status"
+  current: "Aktuell"
+  click-toggle: "Klicken zum Umschalten"
+  click-confirm: "Klicken zum Bestätigen"
+  click-cancel: "Klicken zum Abbrechen"
+
+# Host Control GUI
+gui:
+  host:
+    title: "Host Controls"
+    start:
+      name: "Challenge Starten"
+      lore-click: "Klicke um den Timer zu starten"
+      lore-begin: "und die Challenge zu beginnen!"
+      lore-command: "Befehl: /start"
+    settings:
+      name: "Einstellungen"
+      lore-click: "Klicke um das"
+      lore-menu: "Challenge-Einstellungsmenü zu öffnen"
+      lore-command: "Befehl: /settings"
+    fullreset:
+      name: "⚠ VOLLSTÄNDIGER RESET ⚠"
+      lore-warning: "WARNUNG!"
+      lore-desc1: "Dies setzt die Welt und"
+      lore-desc2: "den gesamten Fortschritt zurück!"
+      lore-bullet1: "• Löscht die Speedrun-Welt"
+      lore-bullet2: "• Setzt alle Spielerdaten zurück"
+      lore-bullet3: "• Generiert eine neue Welt"
+      lore-click: "Klicken für vollständigen Reset"
+      lore-command: "Befehl: /fullreset"
+    confirm:
+      title: "⚠ Vollständigen Reset bestätigen ⚠"
+      yes-name: "✓ JA - ALLES ZURÜCKSETZEN"
+      yes-desc: "Dies wird:"
+      yes-bullet1: "• Die Speedrun-Welt löschen"
+      yes-bullet2: "• Allen Spielerfortschritt zurücksetzen"
+      yes-bullet3: "• Eine neue Welt generieren"
+      yes-warning: "⚠ DIES KANN NICHT RÜCKGÄNGIG GEMACHT WERDEN!"
+      yes-click: "Klicken zum Bestätigen"
+      no-name: "✗ NEIN - Zurück"
+      no-desc1: "Abbrechen und zurück zum"
+      no-desc2: "Host-Kontrollmenü"
+      warning-label: "⚠ WARNUNG ⚠"
+    item:
+      name: "Host Controls"
+      lore-desc1: "Rechtsklick um das"
+      lore-desc2: "Host-Kontrollmenü zu öffnen"
+      
+  # Settings GUI
+  settings:
+    title: "⚙ Challenge-Einstellungen"
+    gamerules-title: "⚙ Gamerules"
+    challenges-title: "🎯 Herausforderungen"
+    reset-confirm-title: "⚠ Einstellungen zurücksetzen bestätigen ⚠"
+    
+    difficulty:
+      name: "Schwierigkeit: {difficulty}"
+      lore-current: "Aktuell: {difficulty}"
+      lore-click: "Klicken, um zu wechseln:"
+      lore-peaceful: "  • Friedlich"
+      lore-easy: "  • Einfach"
+      lore-normal: "  • Normal"
+      lore-hard: "  • Schwer"
+      lore-applied: "✓ Wird sofort übernommen"
+    structures:
+      name: "Strukturen generieren: {status}"
+      lore-desc: "Dörfer, Tempel, Festungen, etc."
+      lore-status: "Status: {status}"
+      lore-click: "Klicken zum Umschalten"
+      lore-warning: "⚠ Erfordert /fullreset um wirksam zu werden"
+    respawn:
+      name: "Respawn erlauben: {status}"
+      lore-enabled1: "Spieler spawnen nach dem Tod wieder"
+      lore-enabled2: "und können weiterspielen"
+      lore-disabled1: "Spieler werden Zuschauer"
+      lore-disabled2: "nach dem Tod (Hardcore-Modus)"
+      lore-status: "Status: {status}"
+      lore-click: "Klicken zum Umschalten"
+      lore-applied: "✓ Wird sofort übernommen"
+    info:
+      name: "ℹ Einstellungen"
+      lore-desc1: "Konfiguriere Challenge-Einstellungen"
+      lore-desc2: "für deine Speedrun-Welt."
+      lore-save1: "Einstellungen werden gespeichert"
+      lore-save2: "und bleiben über Resets erhalten."
+      lore-fullreset1: "Einige Einstellungen erfordern"
+      lore-fullreset2: "/fullreset, um wirksam zu werden."
+      lore-location1: "Nur verfügbar im"
+      lore-location2: "Warteraum."
+    gamerules:
+      name: "⚙ Gamerules"
+      lore-desc1: "Welt-Gamerules konfigurieren"
+      lore-desc2: "für die Speedrun-Welt."
+      lore-click: "Klicken zum Öffnen"
+    challenges:
+      name: "🎯 Herausforderungen"
+      lore-desc1: "Spezielle Challenge-Modi aktivieren"
+      lore-desc2: "für zusätzliche Schwierigkeit."
+      lore-click: "Klicken zum Öffnen"
+    back:
+      name: "← Zurück"
+      lore-desc: "Zurück zu den Host-Controls"
+    reset:
+      name: "↻ Einstellungen zurücksetzen"
+      lore-desc1: "Alle Einstellungen auf"
+      lore-desc2: "Standardwerte zurücksetzen"
+      lore-click: "Klicken zum Zurücksetzen"
+    reset-confirm:
+      title: "Zurücksetzen der Einstellungen bestätigen"
+      yes-name: "✓ JA - Auf Standard zurücksetzen"
+      yes-desc1: "Dies setzt alle Einstellungen"
+      yes-desc2: "auf ihre Standardwerte zurück."
+      yes-desc3: "Deine benutzerdefinierten Gamerules gehen verloren."
+      yes-click: "Klicken zum Bestätigen"
+      no-name: "✗ NEIN - Einstellungen behalten"
+      no-desc1: "Abbrechen und zurück zum"
+      no-desc2: "Einstellungsmenü"
+
+# Version Checker
+version:
+  prefix: "<aqua>[ChallengeUtil] "
+  update-available: "<yellow>⚠ Neue Version verfügbar! Aktuell: <red>{current}</red> → Neueste: <green>{latest}</green>"
+  download-url: "<aqua>Download: <blue><underlined>{url}"
+
+

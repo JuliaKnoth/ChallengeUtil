@@ -1,0 +1,84 @@
+name: ChallengeUtil
+version: '${project.version}'
+main: de.connunity.util.challenge.ChallengeUtil
+api-version: '1.21.11'
+author: Julia
+description: Utilities für Challenge-Server mit Timer und Holodeck-Reset-System
+softdepend: [PlaceholderAPI]
+
+commands:
+  start:
+    description: Startet den Challenge-Timer
+    usage: /<command>
+    permission: challenge.start
+  pause:
+    description: Pausiert den Challenge-Timer
+    usage: /<command>
+    permission: challenge.pause
+  reset:
+    description: Setzt den Timer auf 00:00:00 zurück (nur Timer, kein Welt-Reset)
+    usage: /<command>
+    permission: challenge.reset
+  fullreset:
+    description: Holodeck-Reset - Erzeugt die Speedrun-Welt neu mit neuem Seed (sofort, kein Neustart)
+    aliases: [resetworld, worldreset]
+    usage: /<command>
+    permission: challenge.fullreset
+  join:
+    description: Tritt der Speedrun-Welt aus dem Warteraum bei
+    aliases: [play, go]
+    usage: /<command>
+    permission: challenge.join
+  settings:
+    description: Öffnet das Einstellungs-GUI (nur im Warteraum)
+    aliases: [config, cfg]
+    usage: /<command>
+    permission: challenge.settings
+  team:
+    description: Tritt einem Team bei (Manhunt oder Team Race Modus)
+    usage: /<command> <runner|hunter|spectator|Teamname>
+    permission: challenge.team
+
+permissions:
+  challenge.host:
+    description: Master-Berechtigung für alle Challenge-Admin-Befehle (start, pause, reset, fullreset, settings)
+    default: op
+    children:
+      challenge.start: true
+      challenge.pause: true
+      challenge.reset: true
+      challenge.fullreset: true
+      challenge.settings: true
+  challenge.start:
+    description: Erlaubt das Starten des Timers
+    default: op
+  challenge.pause:
+    description: Erlaubt das Pausieren des Timers
+    default: op
+  challenge.reset:
+    description: Erlaubt das Zurücksetzen des Timers (nur Timer)
+    default: op
+  challenge.fullreset:
+    description: Erlaubt Holodeck-Reset (Welt-Neugenerierung)
+    default: op
+  challenge.join:
+    description: Erlaubt das Betreten der Speedrun-Welt aus dem Warteraum
+    default: true
+  challenge.settings:
+    description: Erlaubt das Öffnen des Einstellungs-GUIs
+    default: op
+  challenge.team:
+    description: Erlaubt das Beitreten zu einem Team (Manhunt oder Team Race Modus)
+    default: true
+  challenge.*:
+    description: Gewährt alle Challenge-Berechtigungen
+    default: op
+    children:
+      challenge.host: true
+      challenge.start: true
+      challenge.pause: true
+      challenge.reset: true
+      challenge.fullreset: true
+      challenge.join: true
+      challenge.settings: true
+      challenge.team: true

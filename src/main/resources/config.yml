@@ -1,0 +1,144 @@
+# ChallengeUtil Configuration
+# This file stores configuration for the challenge plugin
+
+# Language settings
+# Available languages: de (German), en (English)
+# Language files are located in plugins/ChallengeUtil/lang/
+language: en
+
+# Update checker settings
+# The plugin will check for new versions on Modrinth
+# This is designed to work safely on 24/7 servers
+update-checker:
+  # Enable automatic update checking on server startup
+  # Checks are non-blocking and won't affect server performance
+  enabled: true
+
+# Proxy settings (BungeeCord/Velocity network)
+# IMPORTANT: For auto-reconnect to work, you MUST:
+# 1. Install ChallengeUtilProxy plugin on your Velocity/BungeeCord proxy
+# 2. Enable BungeeCord mode: Set "bungeecord: true" in spigot.yml
+# 3. Match server names EXACTLY in your proxy config (velocity.toml or bungee config.yml)
+proxy:
+  # The lobby server name in your proxy network
+  # Players will be sent here during world reset to avoid freezing/kicks
+  # Make sure this matches your lobby server name in BungeeCord/Velocity config!
+  # Example in velocity.toml: [servers.lobby] -> server name is "lobby"
+  lobby-server: lobby
+  
+  # THIS server's name in your proxy network
+  # Used to bring players back after reset completes
+  # Make sure this matches this server's name in BungeeCord/Velocity config!
+  # Example in velocity.toml: [servers.challenge] -> server name is "challenge"
+  this-server-name: challenge
+
+# World settings - "Holodeck" Strategy for instant resets
+world:
+  # The waiting room (fallback world) - should be set as level-name in server.properties
+  # This is where players wait during world regeneration (3-5 seconds)
+  waiting-room: waiting_room
+  
+  # The actual speedrun world that gets deleted and regenerated
+  # This should NOT be the default world in server.properties
+  speedrun-world: speedrun_world
+  
+  # World generation settings
+  generation:
+    # World type: NORMAL, FLAT, LARGE_BIOMES, AMPLIFIED
+    type: NORMAL
+    
+    # Generate structures (villages, temples, etc.)
+    generate-structures: true
+    
+    # Random seed generation
+    random-seed: true
+  
+  # World difficulty: PEACEFUL, EASY, NORMAL, HARD
+  # This setting is applied when creating a new world via /fullreset
+  difficulty: NORMAL
+  
+  # Teleport settings
+  teleport:
+    # Coordinates in waiting room (where players go during reset)
+    waiting-room-spawn:
+      x: 0
+      y: 65
+      z: 0
+    
+    # Coordinates in speedrun world (where players spawn after reset)
+    # NOTE: Y coordinate is a BASE value - the plugin will automatically
+    # find the actual surface at these X/Z coordinates to prevent spawning
+    # underground or in the air. You can set Y to any value (e.g., 100).
+    speedrun-spawn:
+      x: 0
+      y: 100  # Base Y - actual spawn will be on the surface
+      z: 0
+  
+  # Game rules applied automatically to each world
+  gamerules:
+    # Waiting room settings (peaceful, frozen time, no mobs)
+    waiting-room:
+      advance_time: false      # Freeze time
+      advance_weather: false        # No weather changes
+      spawn_mobs: false         # No mob spawns
+      fire_spread_radius_around_player: 0            # Fire doesn't spread
+      mob_griefing: false           # No creeper damage
+      show_advancement_messages: false  # No advancement spam
+      spawn_phantoms: false            # No phantoms
+      spawn_patrols: false      # No pillager patrols
+      spawn_wandering_traders: false      # No wandering traders
+      keep_inventory: true          # Keep items on death (lobby safety)
+    
+    # Speedrun world settings (normal Minecraft for speedrunning)
+    speedrun-world:
+      advance_time: true        # Normal day/night cycle
+      advance_weather: true         # Normal weather
+      spawn_mobs: true          # Normal mob spawning
+      show_advancement_messages: true   # Show achievements
+      spawn_phantoms: true             # Phantoms enabled
+      spawn_patrols: true       # Pillager patrols
+      spawn_wandering_traders: true       # Wandering traders
+      keep_inventory: false         # Normal speedrun rules
+  
+# Timer settings
+timer:
+  # Format for the timer display (HH:MM:SS)
+  format: "HH:MM:SS"
+
+# Challenge settings
+challenge:
+  # Allow players to respawn after death
+  # If false, players become spectators on death (hardcore mode)
+  allow-respawn: true
+  
+  # Chunk Items Challenge settings
+  chunk_items:
+    # List of items to exclude from random chunk rewards
+    # Format: Material names in UPPERCASE
+    # Leave empty to use default excluded items (overpowered/technical items)
+    excluded:
+      # Examples (uncomment to exclude):
+      # - DIAMOND
+      # - EMERALD
+      # - GOLDEN_APPLE
+      # - ENCHANTED_GOLDEN_APPLE
+      # - NETHERITE_INGOT
+  
+  # Friendly Fire = Item Challenge settings
+  # When enabled:
+  # - Damage is synced between teammates (both take the same damage)
+  # - Natural regeneration is disabled
+  # - Damaged players receive OP items based on their health (lower HP = better items)
+  friendly_fire_item:
+    enabled: false  # Toggle via /settings GUI
+  
+# Reset settings
+reset:
+  # Countdown before reset starts (in seconds)
+  countdown: 3
+  
+  # Messages (MiniMessage format)
+  messages:
+    reset-initiated: "<gold><bold>═══════════════════════════════════\n<red><bold>Reset Initiated\n<yellow>New Seed: {seed}\n<yellow>Back to waiting room...\n<gold><bold>═══════════════════════════════════"
+    reset-complete: "<gold><bold>═══════════════════════════════════\n<green><bold>Finished World Reset!\n<yellow>Reconnecting...\n<gold><bold>═══════════════════════════════════"
+    reset-countdown: "<yellow><bold>Reset in {seconds} Sekunden..."
