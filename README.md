@@ -1,6 +1,5 @@
 ChallengeUtil - Advanced Speedrunning & Challenge Plugin
 
-**Version:** 1.3.19  
 **Platform:** Minecraft 1.21.11 (Paper/Spigot)  
 **Dependencies:** PlaceholderAPI (optional, for team chat prefixes)
 
