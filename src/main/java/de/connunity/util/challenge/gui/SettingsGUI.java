@@ -535,7 +535,7 @@ public class SettingsGUI {
         if (challengeName.equals("manhunt_mode")) {
             Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
             if (teamRaceEnabled != null && teamRaceEnabled) {
-                lore.add(Component.text("⚠ Team Race Mode is active!", NamedTextColor.RED, TextDecoration.BOLD));
+                lore.add(Component.text("⚠ Manhunt Race is active!", NamedTextColor.RED, TextDecoration.BOLD));
                 lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
                 lore.add(Component.text(""));
             }
@@ -874,7 +874,7 @@ public class SettingsGUI {
             case "manhunt_mode":
                 return "Activate Manhunt Mode";
             case "team_race_mode":
-                return "Team Race Mode - 2-10 Teams";
+                return "Manhunt Race - 2-10 Teams";
             case "chunk_items":
                 return "Receive random item per chunk";
             case "friendly_fire_item":

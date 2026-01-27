@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Prevents hunters from dropping their tracking compass and ensures they keep it on death
+ * Prevents hunters and team race players from dropping their tracking compass and ensures they keep it on death
  */
 public class CompassProtectionListener implements Listener {
     
@@ -35,73 +35,94 @@ public class CompassProtectionListener implements Listener {
             return;
         }
         
+        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+        
         // Check if manhunt mode is enabled
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
-        if (manhuntEnabled == null || !manhuntEnabled) {
+        if (manhuntEnabled != null && manhuntEnabled && "hunter".equals(team)) {
+            // Prevent hunters from dropping compass in manhunt mode
+            event.setCancelled(true);
+            player.sendMessage(lang.getComponent("compass.cannot-drop"));
             return;
         }
         
-        // Check if player is a hunter
-        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
-        if (!"hunter".equals(team)) {
+        // Check if team race mode is enabled
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (teamRaceEnabled != null && teamRaceEnabled && team != null && !team.isEmpty()) {
+            // Prevent team race players from dropping compass
+            event.setCancelled(true);
+            player.sendMessage(lang.getComponent("compass.cannot-drop"));
             return;
         }
-        
-        // Cancel the drop
-        event.setCancelled(true);
-        player.sendMessage(lang.getComponent("compass.cannot-drop"));
     }
     
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
         
         // Check if manhunt mode is enabled
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
-        if (manhuntEnabled == null || !manhuntEnabled) {
+        if (manhuntEnabled != null && manhuntEnabled && "hunter".equals(team)) {
+            // Remove compass from drops for hunters in manhunt mode
+            event.getDrops().removeIf(item -> item.getType() == Material.COMPASS);
             return;
         }
         
-        // Check if player is a hunter
-        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
-        if (!"hunter".equals(team)) {
+        // Check if team race mode is enabled
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (teamRaceEnabled != null && teamRaceEnabled && team != null && !team.isEmpty()) {
+            // Remove compass from drops for team race players
+            event.getDrops().removeIf(item -> item.getType() == Material.COMPASS);
             return;
         }
-        
-        // Remove compass from drops
-        event.getDrops().removeIf(item -> item.getType() == Material.COMPASS);
     }
     
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
+        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
         
         // Check if manhunt mode is enabled
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
-        if (manhuntEnabled == null || !manhuntEnabled) {
-            return;
-        }
-        
-        // Check if player is a hunter
-        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
-        if (!"hunter".equals(team)) {
-            return;
-        }
-        
-        // Give compass back after a short delay (to ensure inventory is ready)
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            // Check if hunter already has a compass
-            boolean hasCompass = false;
-            for (ItemStack item : player.getInventory().getContents()) {
-                if (item != null && item.getType() == Material.COMPASS) {
-                    hasCompass = true;
-                    break;
+        if (manhuntEnabled != null && manhuntEnabled && "hunter".equals(team)) {
+            // Give compass back to hunters in manhunt mode
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                // Check if hunter already has a compass
+                boolean hasCompass = false;
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && item.getType() == Material.COMPASS) {
+                        hasCompass = true;
+                        break;
+                    }
                 }
-            }
-            
-            if (!hasCompass) {
-                plugin.getManhuntManager().giveCompassToHunter(player);
-            }
-        }, 1L); // 1 tick delay
+                
+                if (!hasCompass) {
+                    plugin.getManhuntManager().giveCompassToHunter(player);
+                }
+            }, 1L); // 1 tick delay
+            return;
+        }
+        
+        // Check if team race mode is enabled
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (teamRaceEnabled != null && teamRaceEnabled && team != null && !team.isEmpty()) {
+            // Give compass back to team race players
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                // Check if player already has a compass
+                boolean hasCompass = false;
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && item.getType() == Material.COMPASS) {
+                        hasCompass = true;
+                        break;
+                    }
+                }
+                
+                if (!hasCompass) {
+                    plugin.getTeamRaceManager().giveCompassToPlayer(player, team);
+                }
+            }, 1L); // 1 tick delay
+            return;
+        }
     }
 }

@@ -45,6 +45,27 @@ public class CompassTrackingListener implements Listener {
         
         // Check if manhunt mode is enabled
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        
+        // Handle Team Race mode
+        if (teamRaceEnabled != null && teamRaceEnabled) {
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            if (team != null && !team.isEmpty()) {
+                // Check if timer is running
+                if (!plugin.getTimerManager().isRunning()) {
+                    return;
+                }
+                
+                // Switch tracked team
+                plugin.getTeamRaceManager().switchTrackedTeam(player);
+                
+                // Cancel the event to prevent normal compass behavior
+                event.setCancelled(true);
+                return;
+            }
+        }
+        
+        // Handle Manhunt mode
         if (manhuntEnabled == null || !manhuntEnabled) {
             return;
         }

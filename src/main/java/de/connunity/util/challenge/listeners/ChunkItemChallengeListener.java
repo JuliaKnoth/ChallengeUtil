@@ -330,9 +330,6 @@ public class ChunkItemChallengeListener implements Listener {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("item", getItemName(item));
             player.sendMessage(lang.getComponent("chunkitem.inventory-full", placeholders));
-            
-            // Play a subtle warning sound
-            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_BREAK, 0.3f, 0.8f);
         } else {
             // Add to inventory (fast operation)
             player.getInventory().addItem(itemStack);

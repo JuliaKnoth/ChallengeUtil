@@ -26,6 +26,9 @@ public class TeamRaceManager {
     private final LanguageManager lang;
     private BukkitRunnable compassUpdateTask;
     private static final long COMPASS_UPDATE_INTERVAL = 20L; // 1 second
+    
+    // Track which team each player is currently tracking (defaults to nearest team)
+    private final Map<UUID, String> playerTrackedTeam = new HashMap<>();
 
     // German color names mapped to Minecraft colors
     private static final Map<String, TeamColor> TEAM_COLORS = new LinkedHashMap<>();
@@ -83,6 +86,7 @@ public class TeamRaceManager {
             compassUpdateTask.cancel();
             compassUpdateTask = null;
         }
+        playerTrackedTeam.clear();
     }
 
     /**
@@ -156,16 +160,28 @@ public class TeamRaceManager {
                             continue;
                         }
 
-                        // Find nearest enemy team and its nearest member
-                        Player nearestEnemy = findNearestEnemyTeamMember(player, teamName, teamNames);
+                        // Get the team this player is tracking (or find nearest)
+                        String trackedTeam = playerTrackedTeam.get(memberId);
+                        String nearestTeam = findNearestEnemyTeam(player, teamName, teamNames);
+                        
+                        // If no tracked team set, or tracked team has no players, use nearest
+                        if (trackedTeam == null || trackedTeam.equals(teamName) || 
+                            plugin.getDataManager().getPlayersInTeam(trackedTeam).isEmpty()) {
+                            trackedTeam = nearestTeam;
+                            playerTrackedTeam.put(memberId, trackedTeam);
+                        }
+                        
+                        // Find nearest member of the tracked team
+                        Player nearestEnemy = findNearestMemberOfTeam(player, trackedTeam);
                         
                         if (nearestEnemy != null) {
-                            // Update compass to point to nearest enemy
+                            // Update compass to point to tracked enemy
                             Location targetLoc = nearestEnemy.getLocation();
                             player.setCompassTarget(targetLoc);
                             
-                            // Update compass name color
-                            updateCompassColor(player, teamName, getPlayerTeam(nearestEnemy));
+                            // Update compass display
+                            boolean isClosest = trackedTeam != null && trackedTeam.equals(nearestTeam);
+                            updateCompassDisplay(player, teamName, trackedTeam, isClosest);
                         }
                     }
                 }
@@ -177,10 +193,11 @@ public class TeamRaceManager {
     }
 
     /**
-     * Find the nearest member of the nearest enemy team
+     * Find the nearest enemy team (not the player's own team)
+     * Returns the team name of the nearest enemy team
      */
-    private Player findNearestEnemyTeamMember(Player player, String playerTeam, List<String> allTeams) {
-        Player nearestEnemy = null;
+    private String findNearestEnemyTeam(Player player, String playerTeam, List<String> allTeams) {
+        String nearestTeam = null;
         double nearestDistance = Double.MAX_VALUE;
 
         for (String enemyTeam : allTeams) {
@@ -190,6 +207,7 @@ public class TeamRaceManager {
 
             Set<UUID> enemyMembers = plugin.getDataManager().getPlayersInTeam(enemyTeam);
             
+            // Find the closest member of this team
             for (UUID enemyId : enemyMembers) {
                 Player enemy = Bukkit.getPlayer(enemyId);
                 if (enemy == null || !enemy.isOnline()) {
@@ -201,8 +219,40 @@ public class TeamRaceManager {
                     double distance = player.getLocation().distance(enemy.getLocation());
                     if (distance < nearestDistance) {
                         nearestDistance = distance;
-                        nearestEnemy = enemy;
+                        nearestTeam = enemyTeam;
                     }
+                }
+            }
+        }
+
+        return nearestTeam;
+    }
+
+    /**
+     * Find the nearest member of a specific team
+     */
+    private Player findNearestMemberOfTeam(Player player, String targetTeam) {
+        if (targetTeam == null) {
+            return null;
+        }
+        
+        Player nearestEnemy = null;
+        double nearestDistance = Double.MAX_VALUE;
+        
+        Set<UUID> enemyMembers = plugin.getDataManager().getPlayersInTeam(targetTeam);
+        
+        for (UUID enemyId : enemyMembers) {
+            Player enemy = Bukkit.getPlayer(enemyId);
+            if (enemy == null || !enemy.isOnline()) {
+                continue;
+            }
+
+            // Only track enemies in same world
+            if (player.getWorld().equals(enemy.getWorld())) {
+                double distance = player.getLocation().distance(enemy.getLocation());
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestEnemy = enemy;
                 }
             }
         }
@@ -211,9 +261,9 @@ public class TeamRaceManager {
     }
 
     /**
-     * Update compass display name with target team color
+     * Update compass display with target team color and closest indicator
      */
-    private void updateCompassColor(Player player, String playerTeam, String targetTeam) {
+    private void updateCompassDisplay(Player player, String playerTeam, String targetTeam, boolean isClosest) {
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item != null && item.getType() == Material.COMPASS) {
@@ -222,15 +272,26 @@ public class TeamRaceManager {
                     TeamColor targetColor = getTeamColor(targetTeam);
                     TeamColor playerColor = getTeamColor(playerTeam);
                     
-                    meta.displayName(lang.getComponent("teamrace.compass-tracking")
-                            .append(Component.text("Team " + targetTeam, targetColor.textColor, TextDecoration.BOLD)));
+                    // Set compass name to team name in team color (without "tracking" text)
+                    Component compassName = Component.text("Team " + targetTeam, targetColor.textColor, TextDecoration.BOLD);
+                    if (isClosest) {
+                        // Add danger symbol if this is the closest team
+                        compassName = Component.text("⚠ ", NamedTextColor.RED, TextDecoration.BOLD)
+                                .append(compassName);
+                    }
+                    meta.displayName(compassName);
 
                     List<Component> lore = new ArrayList<>();
                     lore.add(lang.getComponent("teamrace.compass-points-label")
                             .append(Component.text("Team " + targetTeam, targetColor.textColor)));
+                    if (isClosest) {
+                        lore.add(Component.text("⚠ Closest Team", NamedTextColor.RED, TextDecoration.BOLD));
+                    }
                     lore.add(Component.text(""));
                     lore.add(lang.getComponent("teamrace.compass-your-team")
                             .append(Component.text("Team " + playerTeam, playerColor.textColor, TextDecoration.BOLD)));
+                    lore.add(Component.text(""));
+                    lore.add(lang.getComponent("teamrace.compass-switch-hint"));
 
                     meta.lore(lore);
                     item.setItemMeta(meta);
@@ -359,5 +420,53 @@ public class TeamRaceManager {
     public boolean validateTeamSetup() {
         int teamCount = getActiveTeamCount();
         return teamCount >= 2 && teamCount <= 10;
+    }
+    
+    /**
+     * Switch a player's tracked team to the next available enemy team
+     */
+    public void switchTrackedTeam(Player player) {
+        String playerTeam = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+        if (playerTeam == null) {
+            return;
+        }
+        
+        List<String> enemyTeams = getEnemyTeams(playerTeam);
+        if (enemyTeams.isEmpty()) {
+            return;
+        }
+        
+        // Get current tracked team
+        String currentTracked = playerTrackedTeam.get(player.getUniqueId());
+        
+        // Find next team in the list
+        int currentIndex = enemyTeams.indexOf(currentTracked);
+        int nextIndex = (currentIndex + 1) % enemyTeams.size();
+        String nextTeam = enemyTeams.get(nextIndex);
+        
+        // Update tracked team
+        playerTrackedTeam.put(player.getUniqueId(), nextTeam);
+        
+        // Send feedback to player
+        TeamColor nextTeamColor = getTeamColor(nextTeam);
+        player.sendMessage(lang.getComponent("teamrace.switched-tracking")
+                .append(Component.text("Team " + nextTeam, nextTeamColor.textColor, TextDecoration.BOLD)));
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
+    }
+    
+    /**
+     * Get list of enemy teams (excluding player's team)
+     */
+    private List<String> getEnemyTeams(String playerTeam) {
+        List<String> enemyTeams = new ArrayList<>();
+        List<String> allTeams = getActiveTeamNames();
+        
+        for (String team : allTeams) {
+            if (!team.equals(playerTeam)) {
+                enemyTeams.add(team);
+            }
+        }
+        
+        return enemyTeams;
     }
 }

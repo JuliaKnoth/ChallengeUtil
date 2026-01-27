@@ -39,9 +39,9 @@ start:
   good-luck-subtitle: "<gold>Viel Glück!"
   
   # Team mode errors
-  both-modes-enabled: "<red>✗ Start nicht möglich! Manhunt und Team Race können nicht gleichzeitig aktiviert sein."
+  both-modes-enabled: "<red>✗ Start nicht möglich! Manhunt und Manhunt Race können nicht gleichzeitig aktiviert sein."
   deactivate-one-mode: "<yellow>  Deaktiviere einen Modus in /settings > Herausforderungen"
-  both-modes-active: "<red>✗ Start nicht möglich! Manhunt und Team Race können nicht gleichzeitig aktiviert sein."
+  both-modes-active: "<red>✗ Start nicht möglich! Manhunt und Manhunt Race können nicht gleichzeitig aktiviert sein."
   both-modes-active-hint: "<yellow>  Deaktiviere einen Modus in /settings > Herausforderungen"
   
   # Manhunt mode
@@ -66,14 +66,14 @@ start:
   manhunt-no-hunters-hint: "<yellow>  Mindestens ein Spieler muss /team hunter verwenden"
   
   # Team race mode
-  teamrace-no-team-header: "<red>✗ Start nicht möglich! Team Race Modus ist aktiviert."
+  teamrace-no-team-header: "<red>✗ Start nicht möglich! Manhunt Race Modus ist aktiviert."
   teamrace-all-must-choose: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
   teamrace-team-command-hint: "<aqua>  Verwende /team um verfügbare Teams zu sehen"
   invalid-team-config: "<red>✗ Start nicht möglich! Ungültige Team-Konfiguration."
   min-teams-needed: "<yellow>  Mindestens 2 Teams benötigt. Aktuell: {count}"
   max-teams-exceeded: "<yellow>  Maximal 10 Teams erlaubt. Aktuell: {count}"
   
-  teamrace-no-teams: "<red>✗ Start nicht möglich! Team Race Modus ist aktiviert."
+  teamrace-no-teams: "<red>✗ Start nicht möglich! Manhunt Race Modus ist aktiviert."
   teamrace-no-teams-hint: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
   teamrace-must-choose: "<yellow><bold>⚠ Du musst ein Team wählen, bevor das Spiel starten kann!"
   teamrace-must-choose-hint: "<aqua>  Verwende /team um verfügbare Teams zu sehen"
@@ -105,7 +105,7 @@ reset:
 # Team Command
 team:
   no-mode-active: "<red>✗ Kein Team-Modus ist aktiviert!"
-  no-mode-active-hint: "<gray>  Aktiviere Manhunt oder Team Race in /settings > Herausforderungen"
+  no-mode-active-hint: "<gray>  Aktiviere Manhunt oder Manhunt Race in /settings > Herausforderungen"
   
   # Manhunt mode
   manhunt-usage: "<yellow>Verwendung: /team <runner|hunter|spectator>"
@@ -325,10 +325,10 @@ gui:
         hint1: "<aqua><italic>Nutze /team runner oder /team hunter"
         hint2: "<gray><italic>Teams vor /start wählen"
         hint3: "<gray><italic>Jäger 2 Minuten lang bewegungsunfähig"
-        warning-teamrace: "<red><bold>⚠ Team Race Modus ist aktiv!"
+        warning-teamrace: "<red><bold>⚠ Manhunt Race ist aktiv!"
         auto-disable: "<yellow><italic>Wird automatisch deaktiviert"
       team_race_mode:
-        name: "Team Race Modus - 2-10 Teams"
+        name: "Manhunt Race - 2-10 Teams"
         hint1: "<aqua><italic>Nutze /team <Teamname> zum Beitreten"
         hint2: "<gray><italic>2-10 Teams rennen zum Enderdrachen"
         hint3: "<gold><italic>Kompasse zeigen auf nächstes Team"
@@ -386,7 +386,7 @@ gui:
     manhunt-title: "Manhunt-Modus"
     manhunt-description: "Runner vs. Hunter Team-Modus"
     
-    teamrace-title: "Team Race Modus"
+    teamrace-title: "Manhunt Race"
     teamrace-description: "Mehrere Teams wetteifern um den Enderdrachen"
     
     chunk-items-title: "Chunk Items Challenge"
@@ -477,7 +477,7 @@ manhunt:
   hunter-get-compass-title: "<aqua><bold>✓ KOMPASS FREIGESCHALTET!"
   hunter-get-compass-sub: "<yellow>Rechtsklick zum Tracking!"
 
-# Team Race
+# Manhunt Race
 teamrace:
   team-win: "<gold><bold>═══════════════════════════════\n{team}<bold> HAT GEWONNEN!\n<yellow>Der Enderdrache wurde besiegt!\n<gold><bold>═══════════════════════════════"
   compass-tracking: "<gold><bold>Tracking: <yellow>{target} <gray>({team})"
@@ -512,7 +512,7 @@ chunk:
   new-chunk-entered: "<yellow>Neuer Chunk betreten!"
   item-dropped: "<green>+ {item}"
 
-# Team Colors (for Team Race)
+# Team Colors (for Manhunt Race)
 teams:
   red: "Rot"
   blue: "Blau"
@@ -553,7 +553,7 @@ manhunt:
   runners-in-overworld: "<green>🌍 Alle Runner sind in der Oberwelt!"
   runners-in-nether: "<light_purple>🌀 Alle Runner sind im Nether!"
 
-# Team Race Manager
+# Manhunt Race Manager
 teamrace:
   team-won-title: "<bold>TEAM {team} GEWONNEN!"
   dragon-defeated-subtitle: "<gray>hat den Enderdrachen besiegt!"
@@ -567,6 +567,8 @@ teamrace:
   compass-your-team: "<gray>Dein Team: "
   compass-tracking: "<bold>Team-Tracker <gray>→ "
   compass-points-label: "<gray>Zeigt auf: "
+  compass-switch-hint: "<yellow>Rechtsklick zum Teamwechsel"
+  switched-tracking: "<gold>Verfolge jetzt: "
 
 # Player Death Messages
 death:

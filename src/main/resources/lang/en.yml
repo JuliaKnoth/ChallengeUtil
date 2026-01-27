@@ -39,7 +39,7 @@ start:
   good-luck-subtitle: "<gold>Good luck!"
   
   # Team mode errors
-  both-modes-enabled: "<red>✗ Cannot start! Manhunt and Team Race cannot be active at the same time."
+  both-modes-enabled: "<red>✗ Cannot start! Manhunt and Manhunt Race cannot be active at the same time."
   deactivate-one-mode: "<yellow>  Deactivate one mode in /settings > Challenges"
   
   # Manhunt mode
@@ -54,7 +54,7 @@ start:
   need-hunter-hint: "<yellow>  At least one player must use /team hunter"
   
   # Team race mode
-  teamrace-no-team-header: "<red>✗ Cannot start! Team Race mode is active."
+  teamrace-no-team-header: "<red>✗ Cannot start! Manhunt Race mode is active."
   teamrace-all-must-choose: "<yellow>  All players must choose a team first:"
   teamrace-team-command-hint: "<aqua>  Use /team to see available teams"
   invalid-team-config: "<red>✗ Cannot start! Invalid team configuration."
@@ -82,7 +82,7 @@ reset:
 # Team Command
 team:
   no-mode-active: "<red>✗ No team mode is active!"
-  no-mode-active-hint: "<gray>  Enable Manhunt or Team Race in /settings > Challenges"
+  no-mode-active-hint: "<gray>  Enable Manhunt or Manhunt Race in /settings > Challenges"
   
   # Manhunt mode
   manhunt-usage: "<yellow>Usage: /team <runner|hunter|spectator>"
@@ -203,7 +203,7 @@ gui:
     manhunt-title: "Manhunt Mode"
     manhunt-description: "Runner vs. Hunter team mode"
     
-    teamrace-title: "Team Race Mode"
+    teamrace-title: "Manhunt Race"
     teamrace-description: "Multiple teams compete for the Ender Dragon"
     
     chunk-items-title: "Chunk Items Challenge"
@@ -294,7 +294,7 @@ manhunt:
   hunter-get-compass-title: "<aqua><bold>✓ COMPASS UNLOCKED!"
   hunter-get-compass-sub: "<yellow>Right-click to track!"
 
-# Team Race
+# Manhunt Race
 teamrace:
   team-win: "<gold><bold>═══════════════════════════════\n{team}<bold> HAS WON!\n<yellow>The Ender Dragon has been defeated!\n<gold><bold>═══════════════════════════════"
   compass-tracking: "<gold><bold>Tracking: <yellow>{target} <gray>({team})"
@@ -329,7 +329,7 @@ chunk:
   new-chunk-entered: "<yellow>New chunk entered!"
   item-dropped: "<green>+ {item}"
 
-# Team Colors (for Team Race)
+# Team Colors (for Manhunt Race)
 teams:
   red: "Red"
   blue: "Blue"
@@ -369,7 +369,7 @@ manhunt:
   runners-in-overworld: "<green>🌍 All runners are in the Overworld!"
   runners-in-nether: "<light_purple>🌀 All runners are in the Nether!"
 
-# Team Race Manager
+# Manhunt Race Manager
 teamrace:
   team-won-title: "<bold>TEAM {team} WON!"
   dragon-defeated-subtitle: "<gray>defeated the Ender Dragon!"
@@ -383,6 +383,8 @@ teamrace:
   compass-your-team: "<gray>Your Team: "
   compass-tracking: "<bold>Team-Tracker <gray>→ "
   compass-points-label: "<gray>Points to: "
+  compass-switch-hint: "<yellow>Right-click to switch teams"
+  switched-tracking: "<gold>Now tracking: "
 
 # Player Death Messages
 death:
@@ -647,10 +649,10 @@ gui:
       manhunt_hint1: "<aqua><italic>Use /team runner or /team hunter"
       manhunt_hint2: "<gray><italic>Choose teams before /start"
       manhunt_hint3: "<gray><italic>Hunters immobilized for 2 minutes"
-      manhunt_warning_teamrace: "<red><bold>⚠ Team Race Mode is active!"
+      manhunt_warning_teamrace: "<red><bold>⚠ Manhunt Race is active!"
       manhunt_auto_disable: "<yellow><italic>Will be automatically disabled"
       
-      team_race_mode: "Team Race Mode - 2-10 Teams"
+      team_race_mode: "Manhunt Race - 2-10 Teams"
       teamrace_hint1: "<aqua><italic>Use /team <TeamName> to join"
       teamrace_hint2: "<gray><italic>2-10 teams race to the Ender Dragon"
       teamrace_hint3: "<gold><italic>Compasses point to nearest team"

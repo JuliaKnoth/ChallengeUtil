@@ -602,7 +602,7 @@ public class SettingsGUIListener implements Listener {
                 if (teamRaceEnabled != null && teamRaceEnabled) {
                     plugin.getDataManager().saveChallenge("team_race_mode", false);
                     Map<String, String> placeholders = new HashMap<>();
-                    placeholders.put("mode", "Team Race");
+                    placeholders.put("mode", "Manhunt Race");
                     player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
                 }
                 // Reset teams when switching to Manhunt mode

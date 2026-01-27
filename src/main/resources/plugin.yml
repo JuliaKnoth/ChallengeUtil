@@ -35,7 +35,7 @@ commands:
     usage: /<command>
     permission: challenge.settings
   team:
-    description: Tritt einem Team bei (Manhunt oder Team Race Modus)
+    description: Tritt einem Team bei (Manhunt oder Manhunt Race Modus)
     usage: /<command> <runner|hunter|spectator|Teamname>
     permission: challenge.team
 
@@ -68,7 +68,7 @@ permissions:
     description: Erlaubt das Öffnen des Einstellungs-GUIs
     default: op
   challenge.team:
-    description: Erlaubt das Beitreten zu einem Team (Manhunt oder Team Race Modus)
+    description: Erlaubt das Beitreten zu einem Team (Manhunt oder Manhunt Race Modus)
     default: true
   challenge.*:
     description: Gewährt alle Challenge-Berechtigungen
