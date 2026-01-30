@@ -6,11 +6,13 @@ import de.connunity.util.challenge.timer.TimerManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -89,6 +91,12 @@ public class FullResetCommand implements CommandExecutor {
         // Reset timer and clear all persistent data
         timerManager.reset();
         plugin.getDataManager().clearAllData();
+        
+        // Reset all players (clear inventory except host item, reset HP, level, achievements)
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            resetPlayer(player);
+        }
+        plugin.getLogger().info("Reset all players for full reset (" + Bukkit.getOnlinePlayers().size() + " players)");
         
         // Log
         plugin.getLogger().info("═══════════════════════════════════");
@@ -939,6 +947,73 @@ public class FullResetCommand implements CommandExecutor {
         double y = plugin.getConfig().getDouble("world.teleport.speedrun-spawn.y", 100);
         double z = plugin.getConfig().getDouble("world.teleport.speedrun-spawn.z", 0);
         return new Location(speedrunWorld, x, y, z);
+    }
+    
+    /**
+     * Reset a player: clear inventory (except host item), reset HP, level, and achievements
+     */
+    private void resetPlayer(Player player) {
+        // Save host item if player has one
+        ItemStack hostItem = null;
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (isHostControlItem(item)) {
+                hostItem = item.clone();
+                break;
+            }
+        }
+        
+        // Clear inventory
+        player.getInventory().clear();
+        
+        // Restore host item to slot 8 if it was present
+        if (hostItem != null) {
+            player.getInventory().setItem(8, hostItem);
+        }
+        
+        // Reset health
+        player.setHealth(player.getMaxHealth());
+        player.setFoodLevel(20);
+        player.setSaturation(5.0f);
+        player.setExhaustion(0.0f);
+        
+        // Reset level and experience
+        player.setLevel(0);
+        player.setExp(0.0f);
+        
+        // Reset achievements/advancements
+        Bukkit.advancementIterator().forEachRemaining(advancement -> {
+            if (advancement != null) {
+                advancement.getCriteria().forEach(criteria -> {
+                    if (player.getAdvancementProgress(advancement).getAwardedCriteria().contains(criteria)) {
+                        player.getAdvancementProgress(advancement).revokeCriteria(criteria);
+                    }
+                });
+            }
+        });
+        
+        plugin.getLogger().info("Reset player: " + player.getName());
+    }
+    
+    /**
+     * Check if an item is the host control item
+     */
+    private boolean isHostControlItem(ItemStack item) {
+        if (item == null || item.getType() != Material.NETHER_STAR) {
+            return false;
+        }
+        
+        if (!item.hasItemMeta()) {
+            return false;
+        }
+        
+        Component displayName = item.getItemMeta().displayName();
+        if (displayName == null) {
+            return false;
+        }
+        
+        String name = PlainTextComponentSerializer.plainText().serialize(displayName);
+        return name.equals("Host Controls");
     }
     
     /**

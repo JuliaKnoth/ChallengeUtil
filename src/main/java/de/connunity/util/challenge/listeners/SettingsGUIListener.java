@@ -4,6 +4,9 @@ import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.gui.HostControlGUI;
 import de.connunity.util.challenge.gui.SettingsGUI;
 import de.connunity.util.challenge.lang.LanguageManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
@@ -105,7 +108,10 @@ public class SettingsGUIListener implements Listener {
                 return;
             }
             // Handle challenge clicks
-            handleChallengesClick(player, slot);
+            boolean isRightClick = event.getClick().isRightClick();
+            boolean isShiftClick = event.getClick().isShiftClick();
+            boolean isDropKey = event.getClick().toString().contains("DROP");
+            handleChallengesClick(player, slot, isRightClick, isShiftClick, isDropKey);
             return;
         }
         
@@ -444,6 +450,16 @@ public class SettingsGUIListener implements Listener {
             
             boolean newValue = currentValue == null ? true : !currentValue;
             
+            // Prevent disabling keepInventory if Keep RNG is enabled
+            if (gameruleName.equals("keep_inventory") && !newValue) {
+                Boolean keepRNGEnabled = plugin.getDataManager().getSavedChallenge("keep_rng");
+                if (keepRNGEnabled != null && keepRNGEnabled) {
+                    player.sendMessage(lang.getComponent("settings.keep-inventory-locked"));
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    return;
+                }
+            }
+            
             // Apply to ALL worlds immediately
             for (World world : Bukkit.getWorlds()) {
                 try {
@@ -567,7 +583,7 @@ public class SettingsGUIListener implements Listener {
     /**
      * Handle individual challenge click
      */
-    private void handleChallengesClick(Player player, int slot) {
+    private void handleChallengesClick(Player player, int slot, boolean isRightClick, boolean isShiftClick, boolean isDropKey) {
         // Map slots to challenge names
         String challengeName = null;
         switch (slot) {
@@ -576,6 +592,7 @@ public class SettingsGUIListener implements Listener {
             case 11: challengeName = "team_race_mode"; break;
             case 12: challengeName = "chunk_items"; break;
             case 13: challengeName = "friendly_fire_item"; break;
+            case 14: challengeName = "keep_rng"; break;
             
             default:
                 return; // Invalid slot
@@ -583,6 +600,60 @@ public class SettingsGUIListener implements Listener {
         
         // Validate challenge name
         if (challengeName == null) {
+            return;
+        }
+        
+        // Special handling for keep_rng percentage adjustment
+        if (challengeName.equals("keep_rng")) {
+            // Get current percentage
+            Integer currentPercentage = plugin.getDataManager().getSavedChallengeSetting("keep_rng", "percentage");
+            if (currentPercentage == null) {
+                currentPercentage = 50; // Default
+            }
+            
+            int newPercentage;
+            if (isRightClick) {
+                // Right-click: decrease by 10%
+                newPercentage = Math.max(0, currentPercentage - 10);
+            } else if (isDropKey) {
+                // Ignore drop key
+                return;
+            } else {
+                // Left-click: increase by 10%
+                newPercentage = Math.min(100, currentPercentage + 10);
+            }
+            
+            // Save the new percentage
+            plugin.getDataManager().saveChallengeSetting("keep_rng", "percentage", newPercentage);
+            
+            // Automatically toggle challenge based on percentage
+            boolean newEnabled = newPercentage > 0;
+            plugin.getDataManager().saveChallenge("keep_rng", newEnabled);
+            
+            // Force keepInventory to true when Keep RNG is enabled
+            if (newEnabled) {
+                String speedrunWorldName = plugin.getConfig().getString("world.speedrun-world", "speedrun_world");
+                org.bukkit.World speedrunWorld = org.bukkit.Bukkit.getWorld(speedrunWorldName);
+                if (speedrunWorld != null) {
+                    org.bukkit.GameRule<Boolean> keepInventoryRule = org.bukkit.GameRule.KEEP_INVENTORY;
+                    speedrunWorld.setGameRule(keepInventoryRule, true);
+                    plugin.getDataManager().saveGamerule("keep_inventory", true);
+                    
+                    player.sendMessage(lang.getComponent("settings.keep-inventory-auto-enabled"));
+                }
+            }
+            
+            // Send feedback message
+            if (newPercentage == 0) {
+                player.sendMessage(net.kyori.adventure.text.Component.text("Keep RNG disabled (0%)", net.kyori.adventure.text.format.NamedTextColor.RED));
+            } else {
+                player.sendMessage(net.kyori.adventure.text.Component.text("Keep RNG percentage: ", net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                    .append(net.kyori.adventure.text.Component.text(newPercentage + "%", net.kyori.adventure.text.format.NamedTextColor.YELLOW, net.kyori.adventure.text.format.TextDecoration.BOLD)));
+            }
+            
+            // Refresh GUI
+            SettingsGUI gui = new SettingsGUI(plugin);
+            gui.openChallengesMenu(player);
             return;
         }
         

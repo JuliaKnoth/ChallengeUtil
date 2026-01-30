@@ -385,6 +385,7 @@ teamrace:
   compass-points-label: "<gray>Points to: "
   compass-switch-hint: "<yellow>Right-click to switch teams"
   switched-tracking: "<gold>Now tracking: "
+  compass-now-points-to-portal: "<light_purple><bold>⚠ Compass now points to the End Portal! ⚠"
 
 # Player Death Messages
 death:
@@ -464,6 +465,8 @@ settings:
   gamerule-saved: "<gray>  (Saved - takes effect after /fullreset)"
   challenge-toggled: "<green>✓ {challenge} {status}"
   challenge-saved: "<gray>  (Challenge applied on next /start)"
+  keep-inventory-auto-enabled: "<green>✓ <yellow>Keep Inventory <gray>has been automatically enabled (required for Keep RNG)"
+  keep-inventory-locked: "<red>✗ Keep Inventory cannot be disabled while Keep RNG challenge is enabled!"
   mode-switched-warning: "<yellow>⚠ {mode} <gold>mode was automatically disabled <gray>(only one mode can be active)"
   teams-reset: "<green>✓ <gray>Teams have been reset"
 
@@ -687,8 +690,10 @@ gui:
 # Version Checker
 version:
   prefix: "<aqua>[ChallengeUtil] "
-  update-available: "<yellow>⚠ A new version is available! Current: <red>{current}</red> → Latest: <green>{latest}</green>"
-  download-url: "<aqua>Download: <blue><underlined>{url}"
+  update-available: "<gold>⚠ New version available!"
+  version-info: "   <dark_gray>• <gray>Current: <red><bold>{current}</bold></red>"
+  version-latest: "   <dark_gray>• <gray>Latest: <green><bold>{latest}</bold></green>"
+  download-link: "   <dark_gray>• <gray>Download: <click:open_url:'{url}'><hover:show_text:'<yellow>Click to download<newline><gray>{url}'><aqua><bold>[Click here]</bold></aqua></hover></click>"
 
 
 

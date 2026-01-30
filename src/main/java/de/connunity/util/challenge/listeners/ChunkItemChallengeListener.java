@@ -322,15 +322,8 @@ public class ChunkItemChallengeListener implements Listener {
         // Give the item to the player
         ItemStack itemStack = new ItemStack(item, 1);
         
-        // OPTIMIZATION: Check inventory space before creating item
-        int emptySlot = player.getInventory().firstEmpty();
-        if (emptySlot == -1) {
-            // CRITICAL LAG FIX: Don't drop items when inventory full!
-            // Instead, store it and notify player
-            Map<String, String> placeholders = new HashMap<>();
-            placeholders.put("item", getItemName(item));
-            player.sendMessage(lang.getComponent("chunkitem.inventory-full", placeholders));
-        } else {
+        // OPTIMIZATION: Check if item can be added (either empty slot or stackable)
+        if (canAddItemToInventory(player, itemStack)) {
             // Add to inventory (fast operation)
             player.getInventory().addItem(itemStack);
             /* Commented out to reduce chat spam
@@ -338,7 +331,40 @@ public class ChunkItemChallengeListener implements Listener {
             placeholders.put("item", getItemName(item));
             player.sendMessage(lang.getComponent("chunkitem.item-received", placeholders));
             */
+        } else {
+            // CRITICAL LAG FIX: Don't drop items when inventory full!
+            // Instead, notify player
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("item", getItemName(item));
+            player.sendMessage(lang.getComponent("chunkitem.inventory-full", placeholders));
         }
+    }
+    
+    /**
+     * Check if an item can be added to the player's inventory
+     * This includes checking for empty slots AND stackable items
+     */
+    private boolean canAddItemToInventory(Player player, ItemStack itemToAdd) {
+        // First check if there's an empty slot
+        if (player.getInventory().firstEmpty() != -1) {
+            return true;
+        }
+        
+        // No empty slots - check if item can be stacked with existing items
+        for (ItemStack inventoryItem : player.getInventory().getStorageContents()) {
+            if (inventoryItem != null && inventoryItem.getType() == itemToAdd.getType()) {
+                // Check if items are similar (same type, same meta)
+                if (inventoryItem.isSimilar(itemToAdd)) {
+                    // Check if there's room to stack
+                    int maxStackSize = inventoryItem.getMaxStackSize();
+                    if (inventoryItem.getAmount() < maxStackSize) {
+                        return true; // Can stack with this item
+                    }
+                }
+            }
+        }
+        
+        return false; // No empty slots and can't stack
     }
     
     /**

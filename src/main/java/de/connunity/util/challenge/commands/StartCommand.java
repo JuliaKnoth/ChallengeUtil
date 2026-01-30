@@ -5,16 +5,19 @@ import de.connunity.util.challenge.lang.LanguageManager;
 import de.connunity.util.challenge.timer.TimerManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -240,11 +243,25 @@ public class StartCommand implements CommandExecutor {
             }
         }
         
+        // Force keepInventory to true if Keep RNG challenge is enabled
+        Boolean keepRNGEnabled = plugin.getDataManager().getSavedChallenge("keep_rng");
+        if (keepRNGEnabled != null && keepRNGEnabled) {
+            org.bukkit.GameRule<Boolean> keepInventoryRule = org.bukkit.GameRule.KEEP_INVENTORY;
+            speedrunWorld.setGameRule(keepInventoryRule, true);
+            plugin.getDataManager().saveGamerule("keep_inventory", true);
+        }
+        
         // Set time to day and weather to clear (initial start only)
         speedrunWorld.setTime(1000L); // Morning time (1000 ticks)
         speedrunWorld.setStorm(false); // No rain
         speedrunWorld.setThundering(false); // No thunder
         speedrunWorld.setWeatherDuration(999999); // Keep clear for a long time
+        
+        // Reset all players (clear inventory except host item, reset HP, level, achievements)
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            resetPlayer(player);
+        }
+        plugin.getLogger().info("Reset all players for game start");
         
         // Start 5-second countdown for all players
         startCountdown();
@@ -330,5 +347,70 @@ public class StartCommand implements CommandExecutor {
         
         // Schedule next number (1 second = 20 ticks)
         Bukkit.getScheduler().runTaskLater(plugin, () -> showCountdownNumber(secondsLeft - 1), 20L);
+    }
+    
+    /**
+     * Reset a player: clear inventory (except host item), reset HP, level, and achievements
+     */
+    private void resetPlayer(Player player) {
+        // Save host item if player has one
+        ItemStack hostItem = null;
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (isHostControlItem(item)) {
+                hostItem = item.clone();
+                break;
+            }
+        }
+        
+        // Clear inventory
+        player.getInventory().clear();
+        
+        // Restore host item to slot 8 if it was present
+        if (hostItem != null) {
+            player.getInventory().setItem(8, hostItem);
+        }
+        
+        // Reset health
+        player.setHealth(player.getMaxHealth());
+        player.setFoodLevel(20);
+        player.setSaturation(5.0f);
+        player.setExhaustion(0.0f);
+        
+        // Reset level and experience
+        player.setLevel(0);
+        player.setExp(0.0f);
+        
+        // Reset achievements/advancements
+        Bukkit.advancementIterator().forEachRemaining(advancement -> {
+            if (advancement != null) {
+                advancement.getCriteria().forEach(criteria -> {
+                    if (player.getAdvancementProgress(advancement).getAwardedCriteria().contains(criteria)) {
+                        player.getAdvancementProgress(advancement).revokeCriteria(criteria);
+                    }
+                });
+            }
+        });
+    }
+    
+    /**
+     * Check if an item is the host control item
+     */
+    private boolean isHostControlItem(ItemStack item) {
+        if (item == null || item.getType() != Material.NETHER_STAR) {
+            return false;
+        }
+        
+        if (!item.hasItemMeta()) {
+            return false;
+        }
+        
+        Component displayName = item.getItemMeta().displayName();
+        if (displayName == null) {
+            return false;
+        }
+        
+        String name = PlainTextComponentSerializer.plainText().serialize(displayName);
+        return name.equals("Host Controls");
     }
 }

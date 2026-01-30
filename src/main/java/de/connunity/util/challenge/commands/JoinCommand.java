@@ -69,6 +69,10 @@ public class JoinCommand implements CommandExecutor {
             safeSpawn.getChunk().load(true);
         }
         
+        // Clear teams with no online members (important for team race mode)
+        // This prevents compass from tracking empty teams from previous matches
+        plugin.getDataManager().clearEmptyTeams();
+        
         // Check if timer is running - if so, put player in spectator mode
         if (plugin.getTimerManager().isRunning() && !plugin.getTimerManager().isPaused()) {
             player.teleport(safeSpawn);

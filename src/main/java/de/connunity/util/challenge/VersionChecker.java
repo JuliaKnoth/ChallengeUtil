@@ -3,6 +3,7 @@ package de.connunity.util.challenge;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -10,6 +11,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
@@ -67,35 +70,63 @@ public class VersionChecker {
                     
                     JsonArray versions = JsonParser.parseString(responseStr).getAsJsonArray();
                     if (versions.size() > 0) {
-                        // Get the latest version (first in the array)
-                        JsonObject latestVersionObj = versions.get(0).getAsJsonObject();
+                        // Determine if current version is a pre-release
+                        boolean currentIsPreRelease = isPreRelease(currentVersion);
                         
-                        // Validate version_number exists
-                        if (!latestVersionObj.has("version_number")) {
-                            plugin.getLogger().warning("Invalid Modrinth API response: missing version_number");
-                            return false;
-                        }
+                        // Find the appropriate latest version
+                        JsonObject latestVersionObj = null;
                         
-                        latestVersion = latestVersionObj.get("version_number").getAsString();
-                        
-                        // Get download URL from files array with validation
-                        if (latestVersionObj.has("files")) {
-                            JsonArray files = latestVersionObj.getAsJsonArray("files");
-                            if (files.size() > 0) {
-                                JsonObject primaryFile = files.get(0).getAsJsonObject();
-                                if (primaryFile.has("url")) {
-                                    downloadUrl = primaryFile.get("url").getAsString();
+                        if (currentIsPreRelease) {
+                            // For pre-release versions (Alpha, Beta, etc.), look for ANY newer version
+                            // This includes both newer pre-releases and stable releases
+                            for (int i = 0; i < versions.size(); i++) {
+                                JsonObject versionObj = versions.get(i).getAsJsonObject();
+                                if (!versionObj.has("version_number")) continue;
+                                
+                                String versionNumber = versionObj.get("version_number").getAsString();
+                                
+                                // Check if this version is newer than current version
+                                if (isNewerVersion(versionNumber, currentVersion)) {
+                                    latestVersionObj = versionObj;
+                                    break;
+                                }
+                            }
+                        } else {
+                            // For stable versions, only look for stable releases
+                            for (int i = 0; i < versions.size(); i++) {
+                                JsonObject versionObj = versions.get(i).getAsJsonObject();
+                                if (!versionObj.has("version_number")) continue;
+                                
+                                String versionNumber = versionObj.get("version_number").getAsString();
+                                
+                                // Only consider stable releases
+                                if (!isPreRelease(versionNumber)) {
+                                    latestVersionObj = versionObj;
+                                    break;
                                 }
                             }
                         }
                         
-                        // Fallback download URL if not found in API response
+                        // Validate we found a version
+                        if (latestVersionObj == null || !latestVersionObj.has("version_number")) {
+                            return false; // No suitable update found
+                        }
+                        
+                        latestVersion = latestVersionObj.get("version_number").getAsString();
+                        
+                        // Get version page URL instead of direct download
+                        if (latestVersionObj.has("id")) {
+                            String versionId = latestVersionObj.get("id").getAsString();
+                            downloadUrl = "https://modrinth.com/plugin/" + modrinthProjectId + "/version/" + versionId;
+                        }
+                        
+                        // Fallback to project page if version ID not found
                         if (downloadUrl == null || downloadUrl.isEmpty()) {
                             downloadUrl = "https://modrinth.com/plugin/" + modrinthProjectId;
                         }
                         
-                        // Compare versions (supporting prefixes like Alpha-, Beta-, etc.)
-                        return !areVersionsEqual(currentVersion, latestVersion);
+                        // Compare versions
+                        return isNewerVersion(latestVersion, currentVersion);
                     }
                 } else if (responseCode == 429) {
                     // Rate limited - not critical for 24/7 server
@@ -132,24 +163,34 @@ public class VersionChecker {
                 // Run on main thread with null check for language manager
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     try {
-                        String prefix = plugin.getLanguageManager().getMessage("version.prefix");
-                        String updateMessage = plugin.getLanguageManager().getMessage("version.update-available")
-                                .replace("{current}", currentVersion)
-                                .replace("{latest}", latestVersion);
-                        String downloadMessage = plugin.getLanguageManager().getMessage("version.download-url")
-                                .replace("{url}", downloadUrl != null ? downloadUrl : "https://modrinth.com/plugin/" + modrinthProjectId);
+                        String downloadUrlFinal = downloadUrl != null ? downloadUrl : "https://modrinth.com/plugin/" + modrinthProjectId;
                         
-                        // Log to console
+                        // Log to console (plain text)
                         plugin.getLogger().info("=====================================");
-                        plugin.getLogger().info(updateMessage);
-                        plugin.getLogger().info(downloadMessage);
+                        plugin.getLogger().info("⚠ Neue Version verfügbar! Aktuell: " + currentVersion + " → Neueste: " + latestVersion);
+                        plugin.getLogger().info("Download: " + downloadUrlFinal);
                         plugin.getLogger().info("=====================================");
                         
-                        // Notify online ops (with null check for stability)
+                        // Use language manager with placeholders
+                        Map<String, String> placeholders = new HashMap<>();
+                        placeholders.put("current", currentVersion);
+                        placeholders.put("latest", latestVersion);
+                        placeholders.put("url", downloadUrlFinal);
+                        
+                        // Get components from language file
+                        Component prefix = plugin.getLanguageManager().getComponent("version.prefix");
+                        Component updateMessage = plugin.getLanguageManager().getComponent("version.update-available");
+                        Component versionInfo = plugin.getLanguageManager().getComponent("version.version-info", placeholders);
+                        Component versionLatest = plugin.getLanguageManager().getComponent("version.version-latest", placeholders);
+                        Component downloadLink = plugin.getLanguageManager().getComponent("version.download-link", placeholders);
+                        
+                        // Notify online ops with rich components
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             if (player != null && player.isOnline() && (player.isOp() || player.hasPermission("challenge.host"))) {
-                                player.sendMessage(prefix + updateMessage);
-                                player.sendMessage(prefix + downloadMessage);
+                                player.sendMessage(prefix.append(updateMessage));
+                                player.sendMessage(versionInfo);
+                                player.sendMessage(versionLatest);
+                                player.sendMessage(downloadLink);
                             }
                         }
                     } catch (Exception e) {
@@ -190,76 +231,106 @@ public class VersionChecker {
      * Note: latestVersion must be populated by checkForUpdate() first
      */
     public boolean isUpdateAvailable() {
-        return latestVersion != null && !areVersionsEqual(currentVersion, latestVersion);
+        return latestVersion != null && isNewerVersion(latestVersion, currentVersion);
     }
     
     /**
-     * Compares two version strings, supporting prefixes like "Alpha-", "Beta-", etc.
+     * Checks if a version string represents a pre-release (Alpha, Beta, RC, etc.)
      * Examples:
-     *   areVersionsEqual("Alpha-1.0.0", "Alpha-1.0.0") -> true
-     *   areVersionsEqual("Alpha-1.0.0", "Alpha-1.0.1") -> false
-     *   areVersionsEqual("1.0.0", "1.0.0") -> true
-     *   areVersionsEqual("Beta-1.0.0", "Alpha-1.0.0") -> false (different prefixes)
+     *   isPreRelease("Alpha-1.0.0") -> true
+     *   isPreRelease("Beta-1.0.0") -> true
+     *   isPreRelease("1.0.0") -> false
      * 
-     * @param version1 First version string
-     * @param version2 Second version string
-     * @return true if versions are equal, false otherwise
+     * @param version The version string to check
+     * @return true if it's a pre-release, false otherwise
      */
-    private boolean areVersionsEqual(String version1, String version2) {
-        if (version1 == null || version2 == null) {
-            return version1 == version2;
-        }
-        
-        // Extract prefix and version number
-        String[] parts1 = splitVersionPrefix(version1);
-        String[] parts2 = splitVersionPrefix(version2);
-        
-        String prefix1 = parts1[0];
-        String prefix2 = parts2[0];
-        String versionNum1 = parts1[1];
-        String versionNum2 = parts2[1];
-        
-        // Prefixes must match
-        if (!prefix1.equals(prefix2)) {
+    private boolean isPreRelease(String version) {
+        if (version == null || version.isEmpty()) {
             return false;
         }
         
-        // Version numbers must match
-        return versionNum1.equals(versionNum2);
+        // Check if the version starts with a letter (indicating a prefix like Alpha-, Beta-, etc.)
+        return !Character.isDigit(version.charAt(0));
     }
     
     /**
-     * Splits a version string into prefix and version number parts
+     * Extracts the base version number without any pre-release prefix
      * Examples:
-     *   "Alpha-1.0.0" -> ["Alpha-", "1.0.0"]
-     *   "Beta-1.0.0" -> ["Beta-", "1.0.0"]
-     *   "1.0.0" -> ["", "1.0.0"]
+     *   getBaseVersion("Alpha-1.3.80") -> "1.3.80"
+     *   getBaseVersion("Beta-2.0.1") -> "2.0.1"
+     *   getBaseVersion("1.4.0") -> "1.4.0"
      * 
-     * @param version The version string to split
-     * @return Array with [prefix, versionNumber]
+     * @param version The version string
+     * @return The base version number
      */
-    private String[] splitVersionPrefix(String version) {
-        // Match any prefix before a version number pattern (e.g., "Alpha-", "Beta-", "RC-")
-        // Version number pattern: starts with a digit
-        int versionStart = -1;
+    private String getBaseVersion(String version) {
+        if (version == null || version.isEmpty()) {
+            return version;
+        }
+        
+        // Find where the version number starts (first digit)
         for (int i = 0; i < version.length(); i++) {
             if (Character.isDigit(version.charAt(i))) {
-                versionStart = i;
-                break;
+                return version.substring(i);
             }
         }
         
-        if (versionStart == -1) {
-            // No digit found, treat entire string as version
-            return new String[]{"", version};
-        } else if (versionStart == 0) {
-            // No prefix
-            return new String[]{"", version};
-        } else {
-            // Has prefix
-            String prefix = version.substring(0, versionStart);
-            String versionNum = version.substring(versionStart);
-            return new String[]{prefix, versionNum};
+        return version;
+    }
+    
+    /**
+     * Compares two version strings to determine if version1 is newer than version2
+     * Uses semantic versioning comparison (major.minor.patch)
+     * Examples:
+     *   isNewerVersion("1.4.0", "Alpha-1.3.80") -> true (1.4 > 1.3)
+     *   isNewerVersion("1.3.80", "1.3.63") -> true (80 > 63)
+     *   isNewerVersion("1.3.47", "1.3.63") -> false (47 < 63)
+     *   isNewerVersion("2.0.0", "1.9.9") -> true (2 > 1)
+     * 
+     * @param version1 First version string (potentially newer)
+     * @param version2 Second version string (current)
+     * @return true if version1 is newer than version2
+     */
+    private boolean isNewerVersion(String version1, String version2) {
+        if (version1 == null || version2 == null) {
+            return false;
         }
+        
+        // Extract base version numbers (remove any pre-release prefix)
+        String v1 = getBaseVersion(version1);
+        String v2 = getBaseVersion(version2);
+        
+        // Split into parts
+        String[] parts1 = v1.split("[.\\-]");
+        String[] parts2 = v2.split("[.\\-]");
+        
+        // Compare each part
+        int maxLength = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < maxLength; i++) {
+            int num1 = 0;
+            int num2 = 0;
+            
+            try {
+                if (i < parts1.length) {
+                    num1 = Integer.parseInt(parts1[i]);
+                }
+                if (i < parts2.length) {
+                    num2 = Integer.parseInt(parts2[i]);
+                }
+            } catch (NumberFormatException e) {
+                // If parsing fails, treat as 0
+                continue;
+            }
+            
+            if (num1 > num2) {
+                return true; // version1 is newer
+            } else if (num1 < num2) {
+                return false; // version2 is newer
+            }
+            // If equal, continue to next part
+        }
+        
+        // Versions are equal
+        return false;
     }
 }

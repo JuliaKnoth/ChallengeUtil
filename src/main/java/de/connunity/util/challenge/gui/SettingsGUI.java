@@ -475,6 +475,7 @@ public class SettingsGUI {
         gui.setItem(11, createChallengeItem("team_race_mode", Material.RECOVERY_COMPASS));
         gui.setItem(12, createChallengeItem("chunk_items", Material.CHEST));
         gui.setItem(13, createChallengeItem("friendly_fire_item", Material.GOLDEN_SWORD));
+        gui.setItem(14, createChallengeItem("keep_rng", Material.ENDER_CHEST));
         
         // Back button (bottom row center - slot 49)
         ItemStack back = new ItemStack(Material.ARROW);
@@ -512,11 +513,25 @@ public class SettingsGUI {
         // Get description based on challenge name
         String description = getChallengeDescription(challengeName);
         
+        // For keep_rng, also get the percentage setting
+        Integer keepPercentage = null;
+        if (challengeName.equals("keep_rng")) {
+            keepPercentage = plugin.getDataManager().getSavedChallengeSetting("keep_rng", "percentage");
+            if (keepPercentage == null) {
+                keepPercentage = 50; // Default
+            }
+        }
+        
         // Display name
-        meta.displayName(Component.text(formatChallengeName(challengeName) + ": ", NamedTextColor.GOLD)
-            .append(Component.text(enabled ? lang.getMessage("common.on") : lang.getMessage("common.off"), 
-                enabled ? NamedTextColor.GREEN : NamedTextColor.RED, 
-                TextDecoration.BOLD)));
+        if (challengeName.equals("keep_rng") && enabled) {
+            meta.displayName(Component.text(formatChallengeName(challengeName) + ": ", NamedTextColor.GOLD)
+                .append(Component.text(keepPercentage + "%", NamedTextColor.YELLOW, TextDecoration.BOLD)));
+        } else {
+            meta.displayName(Component.text(formatChallengeName(challengeName) + ": ", NamedTextColor.GOLD)
+                .append(Component.text(enabled ? lang.getMessage("common.on") : lang.getMessage("common.off"), 
+                    enabled ? NamedTextColor.GREEN : NamedTextColor.RED, 
+                    TextDecoration.BOLD)));
+        }
         
         // Lore
         List<Component> lore = new ArrayList<>();
@@ -524,12 +539,29 @@ public class SettingsGUI {
         lore.add(Component.text(description, NamedTextColor.GRAY));
         lore.add(Component.text(""));
         
-        lore.add(Component.text("Status: ", NamedTextColor.GRAY)
-            .append(Component.text(enabled ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"), 
-                enabled ? NamedTextColor.GREEN : NamedTextColor.RED)));
-        lore.add(Component.text(""));
-        lore.add(Component.text("Click to toggle", NamedTextColor.YELLOW));
-        lore.add(Component.text(""));
+        // Special handling for keep_rng to show percentage controls
+        if (challengeName.equals("keep_rng")) {
+            lore.add(Component.text("Status: ", NamedTextColor.GRAY)
+                .append(Component.text(enabled ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"), 
+                    enabled ? NamedTextColor.GREEN : NamedTextColor.RED)));
+            if (enabled) {
+                lore.add(Component.text("Keep Percentage: " + keepPercentage + "%", NamedTextColor.YELLOW));
+            }
+            lore.add(Component.text(""));
+            lore.add(Component.text("Left-click: +10%", NamedTextColor.GREEN));
+            lore.add(Component.text("Right-click: -10%", NamedTextColor.RED));
+            lore.add(Component.text(""));
+            lore.add(Component.text("0% = Keep RNG off", NamedTextColor.GRAY, TextDecoration.ITALIC));
+            lore.add(Component.text("Range: 0-100% in 10% increments", NamedTextColor.GRAY, TextDecoration.ITALIC));
+            lore.add(Component.text("Rounds down (13 items → " + (13 * keepPercentage / 100) + " kept)", NamedTextColor.AQUA, TextDecoration.ITALIC));
+        } else {
+            lore.add(Component.text("Status: ", NamedTextColor.GRAY)
+                .append(Component.text(enabled ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"), 
+                    enabled ? NamedTextColor.GREEN : NamedTextColor.RED)));
+            lore.add(Component.text(""));
+            lore.add(Component.text("Click to toggle", NamedTextColor.YELLOW));
+            lore.add(Component.text(""));
+        }
         
         // Add mutual exclusivity warning for Manhunt and Team Race
         if (challengeName.equals("manhunt_mode")) {
@@ -555,11 +587,14 @@ public class SettingsGUI {
         } else if (challengeName.equals("friendly_fire_item")) {
             lore.add(Component.text("Damage is synchronized in team", NamedTextColor.AQUA, TextDecoration.ITALIC));
             lore.add(Component.text("Lower HP = Better items", NamedTextColor.GOLD, TextDecoration.ITALIC));
+        } else if (challengeName.equals("keep_rng") && !enabled) {
+            // Only show when disabled, since enabled case is handled above
+            lore.add(Component.text("✓ Applied on /start", NamedTextColor.GREEN, TextDecoration.ITALIC));
         } else if (challengeName.equals("one_heart") || challengeName.equals("half_health")) {
             lore.add(Component.text("⚠ Very difficult!", NamedTextColor.RED, TextDecoration.ITALIC));
         } else if (challengeName.equals("no_mining") || challengeName.equals("no_crafting")) {
             lore.add(Component.text("⚠ Extremely restrictive!", NamedTextColor.RED, TextDecoration.ITALIC));
-        } else {
+        } else if (!challengeName.equals("keep_rng")) {
             lore.add(Component.text("✓ Applied on /start", NamedTextColor.GREEN, TextDecoration.ITALIC));
         }
         
@@ -879,6 +914,8 @@ public class SettingsGUI {
                 return "Receive random item per chunk";
             case "friendly_fire_item":
                 return "Friendly Fire = OP Items";
+            case "keep_rng":
+                return "Keep X% of inventory on death (random)";
             default:
                 return "Challenge: " + formatChallengeName(challengeName);
         }

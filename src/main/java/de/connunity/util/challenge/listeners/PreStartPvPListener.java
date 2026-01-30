@@ -37,6 +37,5 @@ public class PreStartPvPListener implements Listener {
         event.setCancelled(true);
         
         Player attacker = (Player) event.getDamager();
-        attacker.sendMessage(lang.getComponent("restrictions.pvp-disabled"));
     }
 }

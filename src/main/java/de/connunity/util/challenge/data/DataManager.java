@@ -245,6 +245,7 @@ public class DataManager {
         dataConfig.set("settings", null);
         dataConfig.set("gamerules", null);
         dataConfig.set("challenges", null);
+        dataConfig.set("challenge-settings", null);
         save();
     }
     
@@ -257,6 +258,14 @@ public class DataManager {
     }
     
     /**
+     * Save a challenge setting value (integer)
+     */
+    public void saveChallengeSetting(String challengeName, String settingName, int value) {
+        dataConfig.set("challenge-settings." + challengeName + "." + settingName, value);
+        save();
+    }
+    
+    /**
      * Get saved challenge value (returns null if not set)
      */
     public Boolean getSavedChallenge(String challengeName) {
@@ -264,6 +273,16 @@ public class DataManager {
             return null;
         }
         return dataConfig.getBoolean("challenges." + challengeName);
+    }
+    
+    /**
+     * Get saved challenge setting value (returns null if not set)
+     */
+    public Integer getSavedChallengeSetting(String challengeName, String settingName) {
+        if (!dataConfig.contains("challenge-settings." + challengeName + "." + settingName)) {
+            return null;
+        }
+        return dataConfig.getInt("challenge-settings." + challengeName + "." + settingName);
     }
     
     /**
@@ -343,6 +362,72 @@ public class DataManager {
     }
     
     /**
+     * Clear teams that have no online members
+     * This is used when starting a new match to remove teams from previous matches
+     */
+    public void clearEmptyTeams() {
+        if (!dataConfig.contains("teams")) {
+            return;
+        }
+        
+        org.bukkit.configuration.ConfigurationSection teamsSection = dataConfig.getConfigurationSection("teams");
+        if (teamsSection == null) {
+            return;
+        }
+        
+        java.util.List<String> uuidsToRemove = new java.util.ArrayList<>();
+        
+        // Find all UUIDs where the player is not online
+        for (String uuidString : teamsSection.getKeys(false)) {
+            try {
+                java.util.UUID playerId = java.util.UUID.fromString(uuidString);
+                org.bukkit.entity.Player player = org.bukkit.Bukkit.getPlayer(playerId);
+                
+                // If player is not online, mark them for removal
+                if (player == null || !player.isOnline()) {
+                    uuidsToRemove.add(uuidString);
+                }
+            } catch (IllegalArgumentException e) {
+                // Invalid UUID, remove it
+                uuidsToRemove.add(uuidString);
+            }
+        }
+        
+        // Remove all offline players from teams
+        for (String uuidString : uuidsToRemove) {
+            dataConfig.set("teams." + uuidString, null);
+        }
+        
+        if (!uuidsToRemove.isEmpty()) {
+            save();
+        }
+    }
+    
+    /**
+     * Increment kill count for a player in Team Race mode
+     */
+    public void incrementTeamRaceKills(java.util.UUID playerId) {
+        int currentKills = getTeamRaceKills(playerId);
+        dataConfig.set("teamrace.kills." + playerId.toString(), currentKills + 1);
+        save();
+    }
+    
+    /**
+     * Get kill count for a player in Team Race mode
+     */
+    public int getTeamRaceKills(java.util.UUID playerId) {
+        return dataConfig.getInt("teamrace.kills." + playerId.toString(), 0);
+    }
+    
+    /**
+     * Clear all Team Race kill data
+     */
+    public void clearTeamRaceKills() {
+        dataConfig.set("teamrace.kills", null);
+        save();
+    }
+    
+    /**
      * Clear all data (called on full reset)
      * NOTE: This does NOT clear teams - teams persist until explicitly reset
      * NOTE: This does NOT clear settings/gamerules/challenges - those persist across resets
@@ -350,6 +435,7 @@ public class DataManager {
     public void clearAllData() {
         dataConfig.set("timer", null);
         dataConfig.set("world", null);
+        dataConfig.set("teamrace", null);
         // Deliberately NOT clearing: teams, settings, gamerules, challenges
         save();
     }

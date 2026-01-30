@@ -122,6 +122,13 @@ public class PortalTravelListener implements Listener {
                 Location to = new Location(targetWorld, 100, 49, 0);
                 event.setTo(to);
                 
+                // Check if team race mode is enabled and notify TeamRaceManager
+                Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+                if (teamRaceEnabled != null && teamRaceEnabled && plugin.getTimerManager().isRunning()) {
+                    // Store the portal location (in the overworld) for compass tracking
+                    plugin.getTeamRaceManager().setEndPortalLocation(event.getFrom());
+                }
+                
                 // OPTIMIZATION: Pre-load End platform chunks
                 preloadChunksAsync(targetWorld, to, event.getPlayer());
                 

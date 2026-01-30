@@ -29,6 +29,9 @@ public class TeamRaceManager {
     
     // Track which team each player is currently tracking (defaults to nearest team)
     private final Map<UUID, String> playerTrackedTeam = new HashMap<>();
+    
+    // Track end portal location once someone enters the End
+    private Location endPortalLocation = null;
 
     // German color names mapped to Minecraft colors
     private static final Map<String, TeamColor> TEAM_COLORS = new LinkedHashMap<>();
@@ -74,6 +77,9 @@ public class TeamRaceManager {
         // Give all players compasses
         giveTeamCompasses();
         
+        // Update all player suffixes with kill counts
+        updateAllPlayerSuffixes();
+        
         // Start compass tracking
         startCompassUpdateTask();
     }
@@ -87,6 +93,8 @@ public class TeamRaceManager {
             compassUpdateTask = null;
         }
         playerTrackedTeam.clear();
+        endPortalLocation = null;
+        clearAllPlayerSuffixes();
     }
 
     /**
@@ -144,6 +152,7 @@ public class TeamRaceManager {
 
     /**
      * Start task that updates compass direction to point to nearest enemy team member
+     * or to the end portal once someone has entered the End
      */
     private void startCompassUpdateTask() {
         compassUpdateTask = new BukkitRunnable() {
@@ -157,6 +166,13 @@ public class TeamRaceManager {
                     for (UUID memberId : teamMembers) {
                         Player player = Bukkit.getPlayer(memberId);
                         if (player == null || !player.isOnline()) {
+                            continue;
+                        }
+
+                        // If someone has entered the End, point compass to end portal
+                        if (endPortalLocation != null) {
+                            player.setCompassTarget(endPortalLocation);
+                            updateCompassDisplayForEndPortal(player, teamName);
                             continue;
                         }
 
@@ -446,12 +462,6 @@ public class TeamRaceManager {
         
         // Update tracked team
         playerTrackedTeam.put(player.getUniqueId(), nextTeam);
-        
-        // Send feedback to player
-        TeamColor nextTeamColor = getTeamColor(nextTeam);
-        player.sendMessage(lang.getComponent("teamrace.switched-tracking")
-                .append(Component.text("Team " + nextTeam, nextTeamColor.textColor, TextDecoration.BOLD)));
-        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
     }
     
     /**
@@ -468,5 +478,96 @@ public class TeamRaceManager {
         }
         
         return enemyTeams;
+    }
+    
+    /**
+     * Update player's suffix with kill count
+     */
+    public void updatePlayerSuffix(Player player) {
+        int kills = plugin.getDataManager().getTeamRaceKills(player.getUniqueId());
+        
+        if (kills > 0) {
+            // Set suffix to show kill count
+            Component suffix = Component.text(" " + kills, NamedTextColor.GOLD);
+            player.playerListName(player.displayName().append(suffix));
+        } else {
+            // Reset to default (no suffix)
+            player.playerListName(player.displayName());
+        }
+    }
+    
+    /**
+     * Update all players' suffixes with their kill counts
+     */
+    public void updateAllPlayerSuffixes() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            if (team != null && !team.isEmpty()) {
+                updatePlayerSuffix(player);
+            }
+        }
+    }
+    
+    /**
+     * Clear all player suffixes
+     */
+    public void clearAllPlayerSuffixes() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playerListName(player.displayName());
+        }
+    }
+    
+    /**
+     * Set the end portal location when a player enters the End
+     * This makes all compasses point to this location
+     */
+    public void setEndPortalLocation(Location location) {
+        if (endPortalLocation == null) {
+            endPortalLocation = location;
+            
+            // Notify all team race players
+            List<String> teamNames = getActiveTeamNames();
+            for (String teamName : teamNames) {
+                Set<UUID> teamMembers = plugin.getDataManager().getPlayersInTeam(teamName);
+                for (UUID memberId : teamMembers) {
+                    Player player = Bukkit.getPlayer(memberId);
+                    if (player != null && player.isOnline()) {
+                        player.sendMessage(lang.getComponent("teamrace.compass-now-points-to-portal"));
+                        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_END_PORTAL_SPAWN, 1.0f, 1.0f);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Update compass display to show it's pointing to the end portal
+     */
+    private void updateCompassDisplayForEndPortal(Player player, String playerTeam) {
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (item != null && item.getType() == Material.COMPASS) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    TeamColor playerColor = getTeamColor(playerTeam);
+                    
+                    // Set compass name to show end portal
+                    Component compassName = Component.text("◆ ", NamedTextColor.DARK_PURPLE, TextDecoration.BOLD)
+                            .append(Component.text("End Portal", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                            .append(Component.text(" ◆", NamedTextColor.DARK_PURPLE, TextDecoration.BOLD));
+                    meta.displayName(compassName);
+
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Points to: ", NamedTextColor.GRAY)
+                            .append(Component.text("Activated End Portal", NamedTextColor.LIGHT_PURPLE)));
+                    lore.add(Component.text(""));
+                    lore.add(lang.getComponent("teamrace.compass-your-team")
+                            .append(Component.text("Team " + playerTeam, playerColor.textColor, TextDecoration.BOLD)));
+
+                    meta.lore(lore);
+                    item.setItemMeta(meta);
+                }
+            }
+        }
     }
 }

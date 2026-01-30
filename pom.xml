@@ -6,7 +6,7 @@
 
     <groupId>de.connunity.util.challenge</groupId>
     <artifactId>ChallengeUtil</artifactId>
-    <version>Alpha-1.3.48</version>
+    <version>Alpha-1.3.78</version>
     <packaging>jar</packaging>
 
     <name>ChallengeUtil</name>
@@ -120,6 +120,14 @@
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>de.connunity.util.challenge.bstats</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>net.kyori.adventure.text.minimessage</pattern>
+                                    <shadedPattern>de.connunity.util.challenge.libs.minimessage</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>net.kyori.adventure.text.serializer.legacy</pattern>
+                                    <shadedPattern>de.connunity.util.challenge.libs.legacy</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
@@ -171,6 +179,18 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.20.1-R0.1-SNAPSHOT</version> <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-minimessage</artifactId>
+            <version>4.14.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-serializer-legacy</artifactId>
+            <version>4.14.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>me.clip</groupId>

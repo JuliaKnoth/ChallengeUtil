@@ -9,6 +9,7 @@ import de.connunity.util.challenge.listeners.CompassTrackingListener;
 import de.connunity.util.challenge.listeners.ChunkItemChallengeListener;
 import de.connunity.util.challenge.listeners.EnderDragonDeathListener;
 import de.connunity.util.challenge.listeners.FriendlyFireItemListener;
+import de.connunity.util.challenge.listeners.KeepRNGListener;
 import de.connunity.util.challenge.listeners.HostControlGUIListener;
 import de.connunity.util.challenge.listeners.HostControlItemListener;
 import de.connunity.util.challenge.listeners.ManhuntChatListener;
@@ -22,6 +23,7 @@ import de.connunity.util.challenge.listeners.PortalTravelListener;
 import de.connunity.util.challenge.listeners.PreStartPvPListener;
 import de.connunity.util.challenge.listeners.SettingsGUIListener;
 import de.connunity.util.challenge.listeners.TeamRaceEnderDragonListener;
+import de.connunity.util.challenge.listeners.TeamRaceKillListener;
 import de.connunity.util.challenge.listeners.TeamRaceTeamListener;
 import de.connunity.util.challenge.listeners.WaitingRoomListener;
 import de.connunity.util.challenge.manhunt.ManhuntManager;
@@ -126,12 +128,14 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EnderDragonDeathListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceTeamListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceEnderDragonListener(this), this);
+        getServer().getPluginManager().registerEvents(new TeamRaceKillListener(this), this);
         getServer().getPluginManager().registerEvents(new CompassTrackingListener(this), this);
         getServer().getPluginManager().registerEvents(new CompassProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new WaitingRoomListener(this), this);
         getServer().getPluginManager().registerEvents(new PreStartPvPListener(this), this);
         getServer().getPluginManager().registerEvents(chunkItemChallengeListener, this);
         getServer().getPluginManager().registerEvents(friendlyFireItemListener, this);
+        getServer().getPluginManager().registerEvents(new KeepRNGListener(this), this);
 
         // Apply gamerules to waiting room on startup
         Bukkit.getScheduler().runTaskLater(this, () -> applyWaitingRoomGameRules(), 20L);

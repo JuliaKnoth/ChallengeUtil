@@ -2,6 +2,7 @@ package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.VersionChecker;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -14,6 +15,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.Statistic;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Handles player state reset and safe spawning when joining
@@ -241,17 +245,27 @@ public class PlayerJoinListener implements Listener {
                                     return;
                                 }
                                 
-                                String prefix = plugin.getLanguageManager().getMessage("version.prefix");
-                                String updateMessage = plugin.getLanguageManager().getMessage("version.update-available")
-                                        .replace("{current}", versionChecker.getCurrentVersion())
-                                        .replace("{latest}", versionChecker.getLatestVersion());
-                                String downloadMessage = plugin.getLanguageManager().getMessage("version.download-url")
-                                        .replace("{url}", versionChecker.getDownloadUrl() != null ? 
-                                            versionChecker.getDownloadUrl() : 
-                                            "https://modrinth.com/plugin/EPkgUkCn");
+                                // Use language manager with placeholders
+                                Map<String, String> placeholders = new HashMap<>();
+                                placeholders.put("current", versionChecker.getCurrentVersion());
+                                placeholders.put("latest", versionChecker.getLatestVersion());
+                                String downloadUrlFinal = versionChecker.getDownloadUrl() != null ? 
+                                    versionChecker.getDownloadUrl() : 
+                                    "https://modrinth.com/plugin/EPkgUkCn";
+                                placeholders.put("url", downloadUrlFinal);
                                 
-                                player.sendMessage(prefix + updateMessage);
-                                player.sendMessage(prefix + downloadMessage);
+                                // Get components from language file
+                                Component prefix = plugin.getLanguageManager().getComponent("version.prefix");
+                                Component updateMessage = plugin.getLanguageManager().getComponent("version.update-available");
+                                Component versionInfo = plugin.getLanguageManager().getComponent("version.version-info", placeholders);
+                                Component versionLatest = plugin.getLanguageManager().getComponent("version.version-latest", placeholders);
+                                Component downloadLink = plugin.getLanguageManager().getComponent("version.download-link", placeholders);
+                                
+                                // Send rich components
+                                player.sendMessage(prefix.append(updateMessage));
+                                player.sendMessage(versionInfo);
+                                player.sendMessage(versionLatest);
+                                player.sendMessage(downloadLink);
                             } catch (Exception e) {
                                 // Silently catch to avoid spam in 24/7 server logs
                                 plugin.getLogger().fine("Could not notify player about update: " + e.getMessage());
