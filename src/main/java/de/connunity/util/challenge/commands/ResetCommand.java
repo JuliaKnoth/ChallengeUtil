@@ -40,6 +40,7 @@ public class ResetCommand implements CommandExecutor {
         plugin.getManhuntManager().stop();
         plugin.getTeamRaceManager().stop();
         plugin.getChunkItemChallengeListener().stop();
+        plugin.getTimedRandomItemListener().stop();
         
         // Clear team data to allow players to rejoin teams
         plugin.getDataManager().clearTeams();

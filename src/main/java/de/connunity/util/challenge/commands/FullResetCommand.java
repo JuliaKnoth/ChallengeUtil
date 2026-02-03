@@ -66,7 +66,7 @@ public class FullResetCommand implements CommandExecutor {
     /**
      * The "Holodeck" Strategy - Instant reset without server restart
      */
-    private void performHolodeckReset(String initiator) {
+    public void performHolodeckReset(String initiator) {
         plugin.setResetInProgress(true);
         
         // Get configuration
@@ -91,6 +91,11 @@ public class FullResetCommand implements CommandExecutor {
         // Reset timer and clear all persistent data
         timerManager.reset();
         plugin.getDataManager().clearAllData();
+        
+        // Reset listeners for new match
+        if (plugin.getBlockBreakRandomizerListener() != null) {
+            plugin.getBlockBreakRandomizerListener().resetForNewMatch();
+        }
         
         // Reset all players (clear inventory except host item, reset HP, level, achievements)
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -182,12 +187,36 @@ public class FullResetCommand implements CommandExecutor {
     private void deleteAndRegenerateWorld(String worldName, long seed, List<Player> players) {
         plugin.getLogger().info("Starting world deletion for: " + worldName);
         
+        // CRITICAL: Unload ALL three dimensions (Overworld, Nether, End) before deletion
+        // Otherwise file locks on Windows will prevent deletion!
         World speedrunWorld = Bukkit.getWorld(worldName);
+        World netherWorld = Bukkit.getWorld(worldName + "_nether");
+        World endWorld = Bukkit.getWorld(worldName + "_the_end");
         
-        // Unload the world if it exists
+        // Unload the Overworld
         if (speedrunWorld != null) {
             plugin.getLogger().info("Unloading world: " + worldName);
             Bukkit.unloadWorld(speedrunWorld, false); // Don't save - we're deleting it
+        }
+        
+        // Unload the Nether
+        if (netherWorld != null) {
+            plugin.getLogger().info("Unloading Nether: " + worldName + "_nether");
+            Bukkit.unloadWorld(netherWorld, false); // Don't save - we're deleting it
+        }
+        
+        // Unload the End
+        if (endWorld != null) {
+            plugin.getLogger().info("Unloading End: " + worldName + "_the_end");
+            Bukkit.unloadWorld(endWorld, false); // Don't save - we're deleting it
+        }
+        
+        // Small delay to ensure worlds are fully unloaded before deletion (especially on Windows)
+        plugin.getLogger().info("Waiting for worlds to fully unload...");
+        try {
+            Thread.sleep(500); // 500ms delay to ensure file locks are released
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         
         // Delete world folders ASYNCHRONOUSLY

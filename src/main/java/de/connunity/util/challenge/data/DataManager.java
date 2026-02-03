@@ -42,6 +42,14 @@ public class DataManager {
     }
     
     /**
+     * Reload data from disk (used after full reset to ensure no stale data)
+     */
+    public void reloadData() {
+        dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+        plugin.getLogger().info("Data configuration reloaded from disk");
+    }
+    
+    /**
      * Initialize default gamerules from config.yml if data.yml has no gamerules
      */
     private void initializeDefaultGamerules() {
@@ -433,10 +441,31 @@ public class DataManager {
      * NOTE: This does NOT clear settings/gamerules/challenges - those persist across resets
      */
     public void clearAllData() {
+        // Clear timer data
         dataConfig.set("timer", null);
+        
+        // Clear world data (including seed)
         dataConfig.set("world", null);
+        
+        // Clear team race data
         dataConfig.set("teamrace", null);
+        
+        // Clear speedrun milestones (nether/end tracking)
+        // This is critical to ensure nether and end portal data is reset
+        dataConfig.set("speedrun", null);
+        dataConfig.set("speedrun.nether-entered", null);
+        dataConfig.set("speedrun.end-entered", null);
+        dataConfig.set("speedrun.first-nether-time", null);
+        dataConfig.set("speedrun.first-end-time", null);
+        
         // Deliberately NOT clearing: teams, settings, gamerules, challenges
+        
+        // Force immediate save to disk to ensure data is cleared before world regeneration
         save();
+        
+        // Reload from disk to ensure in-memory config matches disk state
+        reloadData();
+        
+        plugin.getLogger().info("All speedrun data cleared and reloaded (nether/end milestones reset)");
     }
 }

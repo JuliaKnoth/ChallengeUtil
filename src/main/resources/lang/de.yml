@@ -336,6 +336,10 @@ gui:
         auto-disable: "<yellow><italic>Wird automatisch deaktiviert"
       chunk_items:
         name: "Zufälliges Item pro Chunk erhalten"
+      block_break_randomizer:
+        name: "Block Break Randomizer"
+        hint1: "<aqua><italic>Blöcke droppen zufällige Items"
+        hint2: "<gray><italic>Gleich für alle Spieler pro Runde"
       friendly_fire_item:
         name: "Friendly Fire = OP Items"
         hint1: "<aqua><italic>Schaden wird im Team synchronisiert"
@@ -621,6 +625,10 @@ friendlyfire:
   penalty-victim: "<gold>⚠ 30 Sekunden Strafe: Keine Friendly Fire Items!"
   penalty-attacker: "<yellow>⚠ Friendly Fire auf {player}!"
   penalty-time-remaining: "<red>⚠ Friendly Fire Strafe: Noch {seconds} Sekunden bis Items wieder erscheinen!"
+
+# Timed Random Item
+timed-random-item:
+  received: "<green>+ <white>{amount}x {item}"
 
 # Host Controls
 host:

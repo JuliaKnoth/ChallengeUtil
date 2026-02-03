@@ -124,6 +124,23 @@ challenge:
       # - ENCHANTED_GOLDEN_APPLE
       # - NETHERITE_INGOT
   
+  # Block Break Randomizer Challenge settings
+  # When enabled:
+  # - Every block broken drops a random item instead of normal drops
+  # - Same randomization for ALL players (seed-based, fair for everyone)
+  # - Different each match (seed resets with /fullreset)
+  # - No OP loot - only regular obtainable items
+  block_break_randomizer:
+    # List of additional items to exclude from randomized drops
+    # Format: Material names in UPPERCASE
+    # Default excludes: command blocks, barriers, spawners, portals, etc.
+    excluded:
+      # Examples (uncomment to exclude more items):
+      # - DIAMOND
+      # - EMERALD
+      # - GOLDEN_APPLE
+      # - IRON_INGOT
+  
   # Friendly Fire = Item Challenge settings
   # When enabled:
   # - Damage is synced between teammates (both take the same damage)
@@ -134,6 +151,10 @@ challenge:
   
 # Reset settings
 reset:
+  # Perform a full reset automatically when the server starts
+  # This is useful for dedicated speedrun servers that reset after each run
+  fullreset-on-startup: false
+  
   # Countdown before reset starts (in seconds)
   countdown: 3
   

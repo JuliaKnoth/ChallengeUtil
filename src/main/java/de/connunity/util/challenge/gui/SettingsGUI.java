@@ -470,14 +470,24 @@ public class SettingsGUI {
     public void openChallengesMenu(Player player) {
         Inventory gui = Bukkit.createInventory(null, 54, lang.getComponent("gui.settings.challenges-title"));
         
-        // Challenge items
-        gui.setItem(10, createChallengeItem("manhunt_mode", Material.COMPASS));
-        gui.setItem(11, createChallengeItem("team_race_mode", Material.RECOVERY_COMPASS));
-        gui.setItem(12, createChallengeItem("chunk_items", Material.CHEST));
-        gui.setItem(13, createChallengeItem("friendly_fire_item", Material.GOLDEN_SWORD));
-        gui.setItem(14, createChallengeItem("keep_rng", Material.ENDER_CHEST));
+        // Row 0 (0-8): Team Modes (top row)
+        gui.setItem(1, createChallengeItem("manhunt_mode", Material.COMPASS));
+        gui.setItem(2, createChallengeItem("team_race_mode", Material.RECOVERY_COMPASS));
         
-        // Back button (bottom row center - slot 49)
+        // Row 1 (9-17): Empty
+        
+        // Row 2 (18-26): RNG based stuff
+        gui.setItem(19, createChallengeItem("chunk_items", Material.CHEST));
+        gui.setItem(20, createChallengeItem("timed_random_item", Material.CLOCK));
+        gui.setItem(21, createChallengeItem("friendly_fire_item", Material.GOLDEN_SWORD));
+        gui.setItem(22, createChallengeItem("block_break_randomizer", Material.DIAMOND_PICKAXE));
+        
+        // Row 3 (27-35): Player stuff
+        gui.setItem(28, createChallengeItem("keep_rng", Material.ENDER_CHEST));
+        
+        // Row 4 (36-44): Empty
+        // Row 5 (45-53): Empty except back button
+        // Back button (slot 49 - bottom row center)
         ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();
         backMeta.displayName(Component.text("← Back to Settings", NamedTextColor.YELLOW));
@@ -584,9 +594,15 @@ public class SettingsGUI {
             lore.add(Component.text("Use /team <TeamName> to join", NamedTextColor.AQUA, TextDecoration.ITALIC));
             lore.add(Component.text("2-10 teams race to the Ender Dragon", NamedTextColor.GRAY, TextDecoration.ITALIC));
             lore.add(Component.text("Compasses point to nearest team", NamedTextColor.GOLD, TextDecoration.ITALIC));
+        } else if (challengeName.equals("block_break_randomizer")) {
+            lore.add(Component.text("Blocks drop random items", NamedTextColor.AQUA, TextDecoration.ITALIC));
+            lore.add(Component.text("Same for all players each match", NamedTextColor.GRAY, TextDecoration.ITALIC));
         } else if (challengeName.equals("friendly_fire_item")) {
             lore.add(Component.text("Damage is synchronized in team", NamedTextColor.AQUA, TextDecoration.ITALIC));
             lore.add(Component.text("Lower HP = Better items", NamedTextColor.GOLD, TextDecoration.ITALIC));
+        } else if (challengeName.equals("timed_random_item")) {
+            lore.add(Component.text("Random items every 30 seconds", NamedTextColor.AQUA, TextDecoration.ITALIC));
+            lore.add(Component.text("Items get better over time", NamedTextColor.GOLD, TextDecoration.ITALIC));
         } else if (challengeName.equals("keep_rng") && !enabled) {
             // Only show when disabled, since enabled case is handled above
             lore.add(Component.text("✓ Applied on /start", NamedTextColor.GREEN, TextDecoration.ITALIC));
@@ -912,8 +928,12 @@ public class SettingsGUI {
                 return "Manhunt Race - 2-10 Teams";
             case "chunk_items":
                 return "Receive random item per chunk";
+            case "block_break_randomizer":
+                return "Block Break Randomizer";
             case "friendly_fire_item":
                 return "Friendly Fire = OP Items";
+            case "timed_random_item":
+                return "Random Item Every 30s";
             case "keep_rng":
                 return "Keep X% of inventory on death (random)";
             default:

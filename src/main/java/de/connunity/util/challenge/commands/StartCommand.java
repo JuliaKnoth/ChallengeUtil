@@ -293,6 +293,9 @@ public class StartCommand implements CommandExecutor {
             // Start chunk item challenge if enabled
             plugin.getChunkItemChallengeListener().start();
             
+            // Start timed random item challenge if enabled
+            plugin.getTimedRandomItemListener().start();
+            
             // Notify hunters about their restrictions
             Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
             if (manhuntEnabled != null && manhuntEnabled) {

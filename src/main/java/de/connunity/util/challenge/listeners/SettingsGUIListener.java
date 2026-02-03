@@ -587,12 +587,18 @@ public class SettingsGUIListener implements Listener {
         // Map slots to challenge names
         String challengeName = null;
         switch (slot) {
-            // Challenges
-            case 10: challengeName = "manhunt_mode"; break;
-            case 11: challengeName = "team_race_mode"; break;
-            case 12: challengeName = "chunk_items"; break;
-            case 13: challengeName = "friendly_fire_item"; break;
-            case 14: challengeName = "keep_rng"; break;
+            // Row 0: Team Modes (top row)
+            case 1: challengeName = "manhunt_mode"; break;
+            case 2: challengeName = "team_race_mode"; break;
+            
+            // Row 2: RNG based stuff
+            case 19: challengeName = "chunk_items"; break;
+            case 20: challengeName = "timed_random_item"; break;
+            case 21: challengeName = "friendly_fire_item"; break;
+            case 22: challengeName = "block_break_randomizer"; break;
+            
+            // Row 3: Player stuff
+            case 28: challengeName = "keep_rng"; break;
             
             default:
                 return; // Invalid slot

@@ -4,12 +4,14 @@ import de.connunity.util.challenge.commands.*;
 import de.connunity.util.challenge.data.DataManager;
 import de.connunity.util.challenge.integration.PlaceholderAPIExpansion;
 import de.connunity.util.challenge.lang.LanguageManager;
+import de.connunity.util.challenge.listeners.BlockBreakRandomizerListener;
 import de.connunity.util.challenge.listeners.CompassProtectionListener;
 import de.connunity.util.challenge.listeners.CompassTrackingListener;
 import de.connunity.util.challenge.listeners.ChunkItemChallengeListener;
 import de.connunity.util.challenge.listeners.EnderDragonDeathListener;
 import de.connunity.util.challenge.listeners.FriendlyFireItemListener;
 import de.connunity.util.challenge.listeners.KeepRNGListener;
+import de.connunity.util.challenge.listeners.TimedRandomItemListener;
 import de.connunity.util.challenge.listeners.HostControlGUIListener;
 import de.connunity.util.challenge.listeners.HostControlItemListener;
 import de.connunity.util.challenge.listeners.ManhuntChatListener;
@@ -55,7 +57,10 @@ public class ChallengeUtil extends JavaPlugin {
     private PlaceholderAPIExpansion placeholderAPIExpansion;
     private ChunkItemChallengeListener chunkItemChallengeListener;
     private FriendlyFireItemListener friendlyFireItemListener;
+    private TimedRandomItemListener timedRandomItemListener;
+    private BlockBreakRandomizerListener blockBreakRandomizerListener;
     private VersionChecker versionChecker;
+    private FullResetCommand fullResetCommand;
     private boolean resetInProgress = false;
     private final Set<String> playersToReset = new HashSet<>();
 
@@ -104,11 +109,18 @@ public class ChallengeUtil extends JavaPlugin {
         // Initialize friendly fire item listener
         friendlyFireItemListener = new FriendlyFireItemListener(this);
 
+        // Initialize timed random item listener
+        timedRandomItemListener = new TimedRandomItemListener(this);
+
+        // Initialize block break randomizer listener
+        blockBreakRandomizerListener = new BlockBreakRandomizerListener(this);
+
         // Register commands
         getCommand("start").setExecutor(new StartCommand(this, timerManager));
         getCommand("pause").setExecutor(new PauseCommand(this, timerManager));
         getCommand("reset").setExecutor(new ResetCommand(this, timerManager));
-        getCommand("fullreset").setExecutor(new FullResetCommand(this, timerManager));
+        fullResetCommand = new FullResetCommand(this, timerManager);
+        getCommand("fullreset").setExecutor(fullResetCommand);
         getCommand("join").setExecutor(new JoinCommand(this));
         getCommand("settings").setExecutor(new SettingsCommand(this));
         getCommand("team").setExecutor(new TeamCommand(this));
@@ -135,6 +147,8 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PreStartPvPListener(this), this);
         getServer().getPluginManager().registerEvents(chunkItemChallengeListener, this);
         getServer().getPluginManager().registerEvents(friendlyFireItemListener, this);
+        getServer().getPluginManager().registerEvents(timedRandomItemListener, this);
+        getServer().getPluginManager().registerEvents(blockBreakRandomizerListener, this);
         getServer().getPluginManager().registerEvents(new KeepRNGListener(this), this);
 
         // Apply gamerules to waiting room on startup
@@ -161,6 +175,14 @@ public class ChallengeUtil extends JavaPlugin {
             Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> versionChecker.notifyIfUpdateAvailable(), 60L);
         } else {
             getLogger().info("Update checker is disabled in config.yml");
+        }
+
+        // Perform full reset on server startup (after all initialization is complete)
+        if (getConfig().getBoolean("reset.fullreset-on-startup", false)) {
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                getLogger().info("Performing full reset on server startup...");
+                fullResetCommand.performHolodeckReset("SERVER_STARTUP");
+            }, 100L); // 5 seconds delay to ensure all worlds and plugins are fully loaded
         }
 
         getLogger().info("ChallengeUtil has been enabled!");
@@ -203,6 +225,14 @@ public class ChallengeUtil extends JavaPlugin {
 
     public ChunkItemChallengeListener getChunkItemChallengeListener() {
         return chunkItemChallengeListener;
+    }
+
+    public TimedRandomItemListener getTimedRandomItemListener() {
+        return timedRandomItemListener;
+    }
+
+    public BlockBreakRandomizerListener getBlockBreakRandomizerListener() {
+        return blockBreakRandomizerListener;
     }
 
     public VersionChecker getVersionChecker() {

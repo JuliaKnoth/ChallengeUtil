@@ -438,6 +438,10 @@ friendlyfire:
   penalty-attacker: "<yellow>⚠ Friendly Fire on {player}!"
   penalty-time-remaining: "<red>⚠ Friendly Fire penalty: {seconds} seconds until items reappear!"
 
+# Timed Random Item
+timed-random-item:
+  received: "<green>+ <white>{amount}x {item}"
+
 # Host Controls
 host:
   no-permission-item: "<red>You don't have permission to use this item!"
@@ -663,6 +667,9 @@ gui:
       teamrace_auto_disable: "<yellow><italic>Will be automatically disabled"
       
       chunk_items: "Receive random item per chunk"
+      block_break_randomizer: "Block Break Randomizer"
+      block_break_randomizer_hint1: "<aqua><italic>Blocks drop random items"
+      block_break_randomizer_hint2: "<gray><italic>Same for all players each match"
       friendly_fire_item: "Friendly Fire = OP Items"
       friendly_fire_hint1: "<aqua><italic>Damage is synchronized in team"
       friendly_fire_hint2: "<gold><italic>Lower HP = Better items"
