@@ -34,6 +34,9 @@ public class BlockBreakRandomizerListener implements Listener {
     // Blocks that should drop nothing when broken (air, fire, etc.)
     private final Set<Material> noDropBlocks = new HashSet<>();
     
+    // Containers that should keep their normal drops (preserve contents)
+    private final Set<Material> containerBlocks = new HashSet<>();
+    
     // Map to store what each block type drops (deterministic based on seed)
     private final Map<Material, Material> blockDropMapping = new HashMap<>();
     
@@ -41,6 +44,7 @@ public class BlockBreakRandomizerListener implements Listener {
         this.plugin = plugin;
         initializeMatchSeed();
         initializeNoDropBlocks();
+        initializeContainerBlocks();
         initializeValidItems();
     }
     
@@ -73,6 +77,45 @@ public class BlockBreakRandomizerListener implements Listener {
         noDropBlocks.add(Material.SOUL_FIRE);
         noDropBlocks.add(Material.WATER);
         noDropBlocks.add(Material.LAVA);
+    }
+    
+    /**
+     * Initialize container blocks that should keep their normal drops
+     */
+    private void initializeContainerBlocks() {
+        // All chest types
+        containerBlocks.add(Material.CHEST);
+        containerBlocks.add(Material.TRAPPED_CHEST);
+        containerBlocks.add(Material.ENDER_CHEST);
+        
+        // Shulker boxes
+        containerBlocks.add(Material.SHULKER_BOX);
+        containerBlocks.add(Material.WHITE_SHULKER_BOX);
+        containerBlocks.add(Material.ORANGE_SHULKER_BOX);
+        containerBlocks.add(Material.MAGENTA_SHULKER_BOX);
+        containerBlocks.add(Material.LIGHT_BLUE_SHULKER_BOX);
+        containerBlocks.add(Material.YELLOW_SHULKER_BOX);
+        containerBlocks.add(Material.LIME_SHULKER_BOX);
+        containerBlocks.add(Material.PINK_SHULKER_BOX);
+        containerBlocks.add(Material.GRAY_SHULKER_BOX);
+        containerBlocks.add(Material.LIGHT_GRAY_SHULKER_BOX);
+        containerBlocks.add(Material.CYAN_SHULKER_BOX);
+        containerBlocks.add(Material.PURPLE_SHULKER_BOX);
+        containerBlocks.add(Material.BLUE_SHULKER_BOX);
+        containerBlocks.add(Material.BROWN_SHULKER_BOX);
+        containerBlocks.add(Material.GREEN_SHULKER_BOX);
+        containerBlocks.add(Material.RED_SHULKER_BOX);
+        containerBlocks.add(Material.BLACK_SHULKER_BOX);
+        
+        // Other storage blocks
+        containerBlocks.add(Material.BARREL);
+        containerBlocks.add(Material.FURNACE);
+        containerBlocks.add(Material.BLAST_FURNACE);
+        containerBlocks.add(Material.SMOKER);
+        containerBlocks.add(Material.DISPENSER);
+        containerBlocks.add(Material.DROPPER);
+        containerBlocks.add(Material.HOPPER);
+        containerBlocks.add(Material.BREWING_STAND);
     }
     
     /**
@@ -179,6 +222,11 @@ public class BlockBreakRandomizerListener implements Listener {
         
         // Skip blocks that should drop nothing
         if (noDropBlocks.contains(blockType)) {
+            return;
+        }
+        
+        // Skip container blocks - let them drop their contents normally
+        if (containerBlocks.contains(blockType)) {
             return;
         }
         
