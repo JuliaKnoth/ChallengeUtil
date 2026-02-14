@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -51,7 +52,7 @@ public class WaitingRoomListener implements Listener {
         // Check if player is in waiting room
         if (player.getWorld().getName().equals(waitingRoomName)) {
             // Apply waiting room state with a small delay to ensure other listeners have run
-            org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                 applyWaitingRoomState(player);
                 // Ensure we kill them if they are below the threshold right after join
                 checkAndKillIfBelow(player);
@@ -104,7 +105,7 @@ public class WaitingRoomListener implements Listener {
     public void onPlayerTeleport(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
         // Run the check slightly later to allow the teleport to complete
-        org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> checkAndKillIfBelow(player), 1L);
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> checkAndKillIfBelow(player), 1L);
     }
     
     /**
@@ -155,7 +156,7 @@ public class WaitingRoomListener implements Listener {
         if (event.getEntity().getWorld().getName().equals(waitingRoomName)) {
             // Don't cancel - let items drop naturally
             // Instead, remove them after 5 seconds (100 ticks)
-            org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                 if (event.getEntity().isValid() && !event.getEntity().isDead()) {
                     event.getEntity().remove();
                 }

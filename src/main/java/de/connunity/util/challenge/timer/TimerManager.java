@@ -1,21 +1,21 @@
 package de.connunity.util.challenge.timer;
 
 import de.connunity.util.challenge.ColorUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.data.DataManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitTask;
 
 public class TimerManager {
     
     private final Plugin plugin;
     private final DataManager dataManager;
-    private BukkitTask timerTask;
-    private BukkitTask blinkTask;
-    private BukkitTask saveTask;
+    private Object timerTask;
+    private Object blinkTask;
+    private Object saveTask;
     
     private long totalSeconds = 0;
     private boolean running = false;
@@ -70,7 +70,7 @@ public class TimerManager {
         }
         
         // Use async task for file I/O to not block main thread
-        saveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+        saveTask = FoliaSchedulerUtil.runTaskTimerAsynchronously(plugin, () -> {
             dataManager.saveTimerState(totalSeconds, running, paused);
         }, 200L, 200L); // Check every 10 seconds (200 ticks) - but uses real time
     }
@@ -80,7 +80,7 @@ public class TimerManager {
      */
     private void stopAutoSave() {
         if (saveTask != null) {
-            saveTask.cancel();
+            FoliaSchedulerUtil.cancelTask(saveTask);
             saveTask = null;
         }
     }
@@ -104,7 +104,7 @@ public class TimerManager {
         // Update immediately on start
         updateActionBar();
         
-        timerTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        timerTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
             if (!paused) {
                 long currentTime = System.currentTimeMillis();
                 long elapsedMillis = currentTime - lastUpdateTime;
@@ -158,7 +158,7 @@ public class TimerManager {
      */
     public void stop() {
         if (timerTask != null) {
-            timerTask.cancel();
+            FoliaSchedulerUtil.cancelTask(timerTask);
             timerTask = null;
         }
         stopBlinking();
@@ -195,7 +195,7 @@ public class TimerManager {
             return; // Already blinking
         }
         
-        blinkTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        blinkTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
             blinkState = !blinkState;
             updateActionBar();
         }, 0L, 10L); // Blink every 0.5 seconds - uses real time
@@ -206,7 +206,7 @@ public class TimerManager {
      */
     private void stopBlinking() {
         if (blinkTask != null) {
-            blinkTask.cancel();
+            FoliaSchedulerUtil.cancelTask(blinkTask);
             blinkTask = null;
         }
         blinkState = false;

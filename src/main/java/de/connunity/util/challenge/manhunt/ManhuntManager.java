@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.manhunt;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 
@@ -15,7 +16,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,10 +30,10 @@ public class ManhuntManager {
 
     private final ChallengeUtil plugin;
     private final LanguageManager lang;
-    private BukkitRunnable blindnessTask;
-    private BukkitRunnable compassChargeTask;
-    private BukkitRunnable compassUpdateTask;
-    private BukkitRunnable glassPlacementTask;
+    private Object blindnessTask;
+    private Object compassChargeTask;
+    private Object compassUpdateTask;
+    private Object glassPlacementTask;
     private long startTime;
     private static final long TWO_MINUTES = 2 * 60 * 1000; // 2 minutes in milliseconds (blindness duration)
     private static final long FIRST_CHARGE_DELAY = 4 * 60 * 1000; // 4 minutes (2 min blindness + 2 min wait)
@@ -121,22 +121,22 @@ public class ManhuntManager {
      */
     public void stop() {
         if (blindnessTask != null) {
-            blindnessTask.cancel();
+            FoliaSchedulerUtil.cancelTask(blindnessTask);
             blindnessTask = null;
         }
 
         if (compassChargeTask != null) {
-            compassChargeTask.cancel();
+            FoliaSchedulerUtil.cancelTask(compassChargeTask);
             compassChargeTask = null;
         }
 
         if (compassUpdateTask != null) {
-            compassUpdateTask.cancel();
+            FoliaSchedulerUtil.cancelTask(compassUpdateTask);
             compassUpdateTask = null;
         }
         
         if (glassPlacementTask != null) {
-            glassPlacementTask.cancel();
+            FoliaSchedulerUtil.cancelTask(glassPlacementTask);
             glassPlacementTask = null;
         }
 
@@ -164,52 +164,46 @@ public class ManhuntManager {
      * Apply blindness to all hunters for the first 2 minutes (uses real-world time)
      */
     private void startBlindnessTask() {
-        blindnessTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Use real-world time instead of tick count
-                long elapsed = System.currentTimeMillis() - startTime;
+        blindnessTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
+            // Use real-world time instead of tick count
+            long elapsed = System.currentTimeMillis() - startTime;
 
-                if (elapsed >= TWO_MINUTES) {
-                    // 2 minutes have passed, remove blindness and cancel task
-                    removeBlindnessFromHunters();
+            if (elapsed >= TWO_MINUTES) {
+                // 2 minutes have passed, remove blindness and cancel task
+                removeBlindnessFromHunters();
 
-                    // Notify hunters
-                    Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
-                    for (UUID hunterId : hunters) {
-                        Player hunter = Bukkit.getPlayer(hunterId);
-                        if (hunter != null && hunter.isOnline()) {
-                            hunter.sendMessage(lang.getComponent("manhunt.blindness-over"));
-                            hunter.sendMessage(lang.getComponent("manhunt.can-see-and-move"));
-                            hunter.playSound(hunter.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
-                            
-                            // Remove invincibility
-                            hunter.setInvulnerable(false);
-                        }
-                    }
-
-                    cancel();
-                    return;
-                }
-
-                // Apply blindness and invincibility to all hunters
+                // Notify hunters
                 Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
                 for (UUID hunterId : hunters) {
                     Player hunter = Bukkit.getPlayer(hunterId);
                     if (hunter != null && hunter.isOnline()) {
-                        // Apply blindness effect (2 minutes duration, but we reapply every second)
-                        hunter.addPotionEffect(
-                                new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, false, false, false));
+                        hunter.sendMessage(lang.getComponent("manhunt.blindness-over"));
+                        hunter.sendMessage(lang.getComponent("manhunt.can-see-and-move"));
+                        hunter.playSound(hunter.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
                         
-                        // Make hunter invulnerable to prevent mob deaths
-                        hunter.setInvulnerable(true);
+                        // Remove invincibility
+                        hunter.setInvulnerable(false);
                     }
                 }
-            }
-        };
 
-        // Run every second - uses real-world milliseconds for elapsed time calculation
-        blindnessTask.runTaskTimer(plugin, 0L, 20L);
+                FoliaSchedulerUtil.cancelTask(blindnessTask);
+                return;
+            }
+
+            // Apply blindness and invincibility to all hunters
+            Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
+            for (UUID hunterId : hunters) {
+                Player hunter = Bukkit.getPlayer(hunterId);
+                if (hunter != null && hunter.isOnline()) {
+                    // Apply blindness effect (2 minutes duration, but we reapply every second)
+                    hunter.addPotionEffect(
+                            new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, false, false, false));
+                    
+                    // Make hunter invulnerable to prevent mob deaths
+                    hunter.setInvulnerable(true);
+                }
+            }
+        }, 0L, 20L);
     }
 
     /**
@@ -231,39 +225,35 @@ public class ManhuntManager {
      * OPTIMIZED: Runs less frequently to reduce lag, uses real-world time
      */
     private void startGlassPlacementTask() {
-        glassPlacementTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Use real-world time instead of tick count
-                long elapsed = System.currentTimeMillis() - startTime;
+        glassPlacementTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
+            // Use real-world time instead of tick count
+            long elapsed = System.currentTimeMillis() - startTime;
 
-                if (elapsed >= TWO_MINUTES) {
-                    // 2 minutes have passed, remove glass and cancel task
-                    removeGlassBlocks();
-                    cancel();
-                    return;
-                }
+            if (elapsed >= TWO_MINUTES) {
+                // 2 minutes have passed, remove glass and cancel task
+                removeGlassBlocks();
+                FoliaSchedulerUtil.cancelTask(glassPlacementTask);
+                return;
+            }
 
-                // Place glass beneath all hunters
-                Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
-                for (UUID hunterId : hunters) {
-                    Player hunter = Bukkit.getPlayer(hunterId);
-                    if (hunter != null && hunter.isOnline()) {
-                        Location hunterLoc = hunter.getLocation();
-                        Location blockBelow = hunterLoc.clone().subtract(0, 1, 0);
-                        
-                        // Only place glass if the block below is air
-                        if (blockBelow.getBlock().getType() == Material.AIR) {
+            // Place glass beneath all hunters
+            Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
+            for (UUID hunterId : hunters) {
+                Player hunter = Bukkit.getPlayer(hunterId);
+                if (hunter != null && hunter.isOnline()) {
+                    Location hunterLoc = hunter.getLocation();
+                    Location blockBelow = hunterLoc.clone().subtract(0, 1, 0);
+                    
+                    // Only place glass if the block below is air
+                    if (blockBelow.getBlock().getType() == Material.AIR) {
+                        FoliaSchedulerUtil.runAtLocation(plugin, blockBelow, () -> {
                             blockBelow.getBlock().setType(Material.GLASS);
                             placedGlassBlocks.add(blockBelow.clone());
-                        }
+                        });
                     }
                 }
             }
-        };
-
-        // OPTIMIZED: Run every 10 ticks (0.5 seconds) - uses real-world time for duration check
-        glassPlacementTask.runTaskTimer(plugin, 0L, 10L);
+        }, 0L, 10L);
     }
     
     /**
@@ -400,57 +390,51 @@ public class ManhuntManager {
      * Start task that charges compasses every 2 minutes (uses real-world time)
      */
     private void startCompassChargeTask() {
-        compassChargeTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
-                long currentTime = System.currentTimeMillis();
+        compassChargeTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
+            Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
+            long currentTime = System.currentTimeMillis();
 
-                for (UUID hunterId : hunters) {
-                    Player hunter = Bukkit.getPlayer(hunterId);
-                    if (hunter == null || !hunter.isOnline()) {
-                        continue;
+            for (UUID hunterId : hunters) {
+                Player hunter = Bukkit.getPlayer(hunterId);
+                if (hunter == null || !hunter.isOnline()) {
+                    continue;
+                }
+
+                // Check if compass should be charged (using real-world milliseconds)
+                Long lastCharged = compassLastCharged.get(hunterId);
+                Boolean isCharged = compassCharged.get(hunterId);
+
+                if (isCharged != null && isCharged) {
+                    // Already charged, skip
+                    continue;
+                }
+
+                long timeUntilCharge;
+                if (lastCharged == null) {
+                    // First charge - check if 4 minutes have passed since start
+                    long elapsed = currentTime - startTime;
+                    timeUntilCharge = FIRST_CHARGE_DELAY - elapsed;
+                } else {
+                    // Subsequent charges - check if 2 minutes have passed since last use
+                    timeUntilCharge = COMPASS_CHARGE_TIME - (currentTime - lastCharged);
+                }
+
+                if (timeUntilCharge <= 0) {
+                    // Charge the compass
+                    compassCharged.put(hunterId, true);
+                    updateCompassInInventory(hunter, true);
+
+                    // Update last charged time if this is a new charge (not initial)
+                    if (lastCharged != null) {
+                        compassLastCharged.put(hunterId, currentTime);
                     }
 
-                    // Check if compass should be charged (using real-world milliseconds)
-                    Long lastCharged = compassLastCharged.get(hunterId);
-                    Boolean isCharged = compassCharged.get(hunterId);
-
-                    if (isCharged != null && isCharged) {
-                        // Already charged, skip
-                        continue;
-                    }
-
-                    long timeUntilCharge;
-                    if (lastCharged == null) {
-                        // First charge - check if 4 minutes have passed since start
-                        long elapsed = currentTime - startTime;
-                        timeUntilCharge = FIRST_CHARGE_DELAY - elapsed;
-                    } else {
-                        // Subsequent charges - check if 2 minutes have passed since last use
-                        timeUntilCharge = COMPASS_CHARGE_TIME - (currentTime - lastCharged);
-                    }
-
-                    if (timeUntilCharge <= 0) {
-                        // Charge the compass
-                        compassCharged.put(hunterId, true);
-                        updateCompassInInventory(hunter, true);
-
-                        // Update last charged time if this is a new charge (not initial)
-                        if (lastCharged != null) {
-                            compassLastCharged.put(hunterId, currentTime);
-                        }
-
-                        hunter.sendMessage(lang.getComponent("manhunt.compass-charged"));
-                        hunter.playSound(hunter.getLocation(), org.bukkit.Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f,
-                                1.5f);
-                    }
+                    hunter.sendMessage(lang.getComponent("manhunt.compass-charged"));
+                    hunter.playSound(hunter.getLocation(), org.bukkit.Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f,
+                            1.5f);
                 }
             }
-        };
-
-        // Run every second - uses real-world milliseconds for timing calculations
-        compassChargeTask.runTaskTimer(plugin, 0L, 20L);
+        }, 0L, 20L);
     }
 
     /**
@@ -458,63 +442,57 @@ public class ManhuntManager {
      * OPTIMIZED: Runs less frequently to reduce lag, independent of game ticks
      */
     private void startCompassUpdateTask() {
-        compassUpdateTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
-                Set<UUID> runners = plugin.getDataManager().getPlayersInTeam("runner");
+        compassUpdateTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
+            Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
+            Set<UUID> runners = plugin.getDataManager().getPlayersInTeam("runner");
 
-                if (hunters.isEmpty() || runners.isEmpty()) {
-                    return;
+            if (hunters.isEmpty() || runners.isEmpty()) {
+                return;
+            }
+
+            for (UUID hunterId : hunters) {
+                Player hunter = Bukkit.getPlayer(hunterId);
+                if (hunter == null || !hunter.isOnline()) {
+                    continue;
                 }
 
-                for (UUID hunterId : hunters) {
-                    Player hunter = Bukkit.getPlayer(hunterId);
-                    if (hunter == null || !hunter.isOnline()) {
+                // Find nearest runner in same world
+                Player nearestRunner = null;
+                double nearestDistance = Double.MAX_VALUE;
+
+                for (UUID runnerId : runners) {
+                    Player runner = Bukkit.getPlayer(runnerId);
+                    if (runner == null || !runner.isOnline()) {
                         continue;
                     }
 
-                    // Find nearest runner in same world
-                    Player nearestRunner = null;
-                    double nearestDistance = Double.MAX_VALUE;
-
-                    for (UUID runnerId : runners) {
-                        Player runner = Bukkit.getPlayer(runnerId);
-                        if (runner == null || !runner.isOnline()) {
-                            continue;
+                    // Only track runners in same world
+                    if (hunter.getWorld().equals(runner.getWorld())) {
+                        double distance = hunter.getLocation().distance(runner.getLocation());
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestRunner = runner;
                         }
-
-                        // Only track runners in same world
-                        if (hunter.getWorld().equals(runner.getWorld())) {
-                            double distance = hunter.getLocation().distance(runner.getLocation());
-                            if (distance < nearestDistance) {
-                                nearestDistance = distance;
-                                nearestRunner = runner;
-                            }
-                        }
-                    }
-
-                    // Update compass to point to nearest runner or last known position
-                    if (nearestRunner != null) {
-                        Location targetLoc = nearestRunner.getLocation();
-                        // Update compass needle (doesn't cause flickering)
-                        hunter.setCompassTarget(targetLoc);
-                        // Store this as the last known position for this hunter
-                        lastKnownRunnerPosition.put(hunterId, targetLoc.clone());
-                    } else {
-                        // No runner in same dimension - point to last known position or portal
-                        Location fallbackTarget = findFallbackCompassTarget(hunter, hunterId);
-                        if (fallbackTarget != null) {
-                            hunter.setCompassTarget(fallbackTarget);
-                        }
-                        // If no fallback found, compass keeps pointing to last set target
                     }
                 }
-            }
-        };
 
-        // OPTIMIZED: Run every 20 ticks (1 second) - independent of server lag
-        compassUpdateTask.runTaskTimer(plugin, 0L, 20L);
+                // Update compass to point to nearest runner or last known position
+                if (nearestRunner != null) {
+                    Location targetLoc = nearestRunner.getLocation();
+                    // Update compass needle (doesn't cause flickering)
+                    hunter.setCompassTarget(targetLoc);
+                    // Store this as the last known position for this hunter
+                    lastKnownRunnerPosition.put(hunterId, targetLoc.clone());
+                } else {
+                    // No runner in same dimension - point to last known position or portal
+                    Location fallbackTarget = findFallbackCompassTarget(hunter, hunterId);
+                    if (fallbackTarget != null) {
+                        hunter.setCompassTarget(fallbackTarget);
+                    }
+                    // If no fallback found, compass keeps pointing to last set target
+                }
+            }
+        }, 0L, 20L);
     }
     
     /**

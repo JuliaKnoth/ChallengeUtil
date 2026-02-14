@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.commands;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -75,13 +76,13 @@ public class JoinCommand implements CommandExecutor {
         
         // Check if timer is running - if so, put player in spectator mode
         if (plugin.getTimerManager().isRunning() && !plugin.getTimerManager().isPaused()) {
-            player.teleport(safeSpawn);
+            FoliaSchedulerUtil.teleport(player, safeSpawn);
             player.setGameMode(org.bukkit.GameMode.SPECTATOR);
             player.sendMessage(lang.getComponent("join.teleported"));
             player.sendMessage(lang.getComponent("join.watch-mode"));
         } else {
             // Normal join - survival mode
-            player.teleport(safeSpawn);
+            FoliaSchedulerUtil.teleport(player, safeSpawn);
             player.setGameMode(org.bukkit.GameMode.SURVIVAL);
             player.sendMessage(lang.getComponent("join.teleported"));
             player.sendMessage(lang.getComponent("join.good-luck-emoji"));

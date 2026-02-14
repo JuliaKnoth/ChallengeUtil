@@ -6,7 +6,7 @@
 
     <groupId>de.connunity.util.challenge</groupId>
     <artifactId>ChallengeUtil</artifactId>
-    <version>Alpha-1.4.80</version>
+    <version>Folia-Alpha-1.5.12</version>
     <packaging>jar</packaging>
 
     <name>ChallengeUtil</name>
@@ -144,10 +144,6 @@
 
     <repositories>
         <repository>
-            <id>spigotmc-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-        <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
@@ -170,15 +166,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
+            <groupId>dev.folia</groupId>
+            <artifactId>folia-api</artifactId>
             <version>1.20.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.20.1-R0.1-SNAPSHOT</version> <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.kyori</groupId>

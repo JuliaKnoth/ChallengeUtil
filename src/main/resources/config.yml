@@ -42,6 +42,29 @@ world:
   # This should NOT be the default world in server.properties
   speedrun-world: speedrun_world
   
+  # Folia World Pool Settings
+  # On Folia servers, dynamic world creation is not supported.
+  # Instead, we use a pool of pre-generated worlds that rotate on each reset.
+  # This provides a new seed every reset while staying Folia-compatible.
+  folia-world-pool:
+    # Enable world pool mode (automatically enabled on Folia, can be forced on Paper)
+    enabled: auto  # Options: auto, true, false
+    
+    # Number of worlds in the pool (3-10 recommended)
+    # Higher = more unique seeds before cycling, but uses more disk space
+    pool-size: 5
+    
+    # Base name for pool worlds (will create: speedrun_pool_0, speedrun_pool_1, etc.)
+    pool-base-name: speedrun_pool
+    
+    # Pre-generate all pool worlds on server startup
+    # If false, worlds are created on-demand during first resets
+    pregenerate-on-startup: true
+    
+    # Regenerate the oldest unused world in the background
+    # This ensures you always have fresh seeds in rotation
+    auto-regenerate-unused: true
+  
   # World generation settings
   generation:
     # World type: NORMAL, FLAT, LARGE_BIOMES, AMPLIFIED

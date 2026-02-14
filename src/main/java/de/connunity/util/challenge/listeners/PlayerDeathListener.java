@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -78,7 +79,7 @@ public class PlayerDeathListener implements Listener {
             // Spectators should remain in spectator mode (they shouldn't die anyway, but just in case)
             if ("spectator".equals(team)) {
                 // Keep spectators in spectator mode
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                     player.setGameMode(GameMode.SPECTATOR);
                 }, 1L);
                 return;
@@ -93,9 +94,9 @@ public class PlayerDeathListener implements Listener {
                 event.setCancelled(false);
                 
                 // Set to spectator mode at death location with a short delay
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                     // Teleport to death location and set spectator mode
-                    player.teleport(deathLocation);
+                    FoliaSchedulerUtil.teleport(player, deathLocation);
                     player.setGameMode(GameMode.SPECTATOR);
                     
                     player.sendMessage(lang.getComponent("death.divider"));
@@ -121,7 +122,7 @@ public class PlayerDeathListener implements Listener {
             // Only apply in speedrun world
             if (player.getWorld().getName().equals(speedrunWorldName)) {
                 // Schedule spectator mode change after respawn
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                     player.setGameMode(GameMode.SPECTATOR);
                     player.sendMessage(lang.getComponent("death.divider"));
                     player.sendMessage(lang.getComponent("death.you-are-dead"));

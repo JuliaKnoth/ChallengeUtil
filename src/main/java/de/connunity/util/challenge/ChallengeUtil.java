@@ -67,6 +67,7 @@ public class ChallengeUtil extends JavaPlugin {
     private BlockBreakRandomizerListener blockBreakRandomizerListener;
     private VersionChecker versionChecker;
     private FullResetCommand fullResetCommand;
+    private FoliaWorldPoolManager worldPoolManager;
     private boolean resetInProgress = false;
     private final Set<String> playersToReset = new HashSet<>();
 
@@ -123,6 +124,18 @@ public class ChallengeUtil extends JavaPlugin {
 
         // Initialize block break randomizer listener
         blockBreakRandomizerListener = new BlockBreakRandomizerListener(this);
+        
+        // Initialize world pool manager if enabled (for Folia or manual mode)
+        if (FoliaWorldPoolManager.isEnabled(this)) {
+            getLogger().info("World Pool Mode is ENABLED");
+            worldPoolManager = new FoliaWorldPoolManager(this);
+            // Initialize pool on next tick to ensure worlds are loaded
+            FoliaSchedulerUtil.runTaskLater(this, () -> {
+                worldPoolManager.initializePool();
+            }, 20L);
+        } else {
+            getLogger().info("World Pool Mode is DISABLED (using traditional Holodeck reset)");
+        }
 
         // Register commands
         getCommand("start").setExecutor(new StartCommand(this, timerManager));
@@ -165,34 +178,34 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new KeepRNGListener(this), this);
 
         // Apply gamerules to waiting room on startup
-        Bukkit.getScheduler().runTaskLater(this, () -> applyWaitingRoomGameRules(), 20L);
+        FoliaSchedulerUtil.runTaskLater(this, () -> applyWaitingRoomGameRules(), 20L);
 
         // Load speedrun world if it exists on disk (bug fix for world not recognized on
         // restart)
-        Bukkit.getScheduler().runTaskLater(this, () -> loadSpeedrunWorldIfExists(), 20L);
+        FoliaSchedulerUtil.runTaskLater(this, () -> loadSpeedrunWorldIfExists(), 20L);
 
         // Apply saved gamerules to speedrun world on startup
-        Bukkit.getScheduler().runTaskLater(this, () -> applySpeedrunWorldSavedGameRules(), 30L);
+        FoliaSchedulerUtil.runTaskLater(this, () -> applySpeedrunWorldSavedGameRules(), 30L);
 
         // Ensure speedrun world has a safe spawn point on startup
-        Bukkit.getScheduler().runTaskLater(this, () -> ensureSpeedrunWorldSafeSpawn(), 40L);
+        FoliaSchedulerUtil.runTaskLater(this, () -> ensureSpeedrunWorldSafeSpawn(), 40L);
 
         // OPTIMIZATION: Disable spawn chunk loading for all worlds to reduce lag
-        Bukkit.getScheduler().runTaskLater(this, () -> optimizeWorldSettings(), 50L);
+        FoliaSchedulerUtil.runTaskLater(this, () -> optimizeWorldSettings(), 50L);
 
         // Check for plugin updates from Modrinth (24/7 server friendly)
         if (getConfig().getBoolean("update-checker.enabled", true)) {
             // Hardcoded Modrinth project ID for ChallengeUtil
             versionChecker = new VersionChecker(this, "EPkgUkCn");
             // Check 3 seconds after startup to avoid startup lag
-            Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> versionChecker.notifyIfUpdateAvailable(), 60L);
+            FoliaSchedulerUtil.runTaskLaterAsynchronously(this, () -> versionChecker.notifyIfUpdateAvailable(), 60L);
         } else {
             getLogger().info("Update checker is disabled in config.yml");
         }
 
         // Perform full reset on server startup (after all initialization is complete)
         if (getConfig().getBoolean("reset.fullreset-on-startup", false)) {
-            Bukkit.getScheduler().runTaskLater(this, () -> {
+            FoliaSchedulerUtil.runTaskLater(this, () -> {
                 getLogger().info("Performing full reset on server startup...");
                 fullResetCommand.performHolodeckReset("SERVER_STARTUP");
             }, 100L); // 5 seconds delay to ensure all worlds and plugins are fully loaded
@@ -254,6 +267,10 @@ public class ChallengeUtil extends JavaPlugin {
 
     public VersionChecker getVersionChecker() {
         return versionChecker;
+    }
+    
+    public FoliaWorldPoolManager getWorldPoolManager() {
+        return worldPoolManager;
     }
 
     /**

@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -344,7 +345,7 @@ public class FriendlyFireItemListener implements Listener {
             event.setCancelled(true);
             
             // Manually apply FIXED half-heart damage to both players (schedule for next tick to avoid issues)
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            FoliaSchedulerUtil.runTask(plugin, () -> {
                 // Apply FIXED damage to victim (always half a heart)
                 if (victim.isOnline() && !victim.isDead()) {
                     double newVictimHealth = Math.max(0.0, victim.getHealth() - FRIENDLY_FIRE_DAMAGE);

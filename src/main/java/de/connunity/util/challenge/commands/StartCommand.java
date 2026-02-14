@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.commands;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import de.connunity.util.challenge.timer.TimerManager;
 import net.kyori.adventure.text.Component;
@@ -218,7 +219,7 @@ public class StartCommand implements CommandExecutor {
         int playerCount = 0;
         for (Player player : allPlayers) {
             if (waitingRoom != null && player.getWorld().getName().equals(waitingRoomName)) {
-                player.teleport(spawnLoc);
+                FoliaSchedulerUtil.teleport(player, spawnLoc);
                 player.setGameMode(GameMode.SURVIVAL);
                 
                 // Reset hunger/saturation to normal starting values
@@ -279,7 +280,7 @@ public class StartCommand implements CommandExecutor {
         // Broadcast starting message
         Bukkit.broadcast(lang.getComponent("start.countdown-starting"));
         
-        Bukkit.getScheduler().runTaskLater(plugin, () -> showCountdownNumber(5), 0L);
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> showCountdownNumber(5), 0L);
     }
     
     private void showCountdownNumber(int secondsLeft) {
@@ -352,7 +353,7 @@ public class StartCommand implements CommandExecutor {
         }
         
         // Schedule next number (1 second = 20 ticks)
-        Bukkit.getScheduler().runTaskLater(plugin, () -> showCountdownNumber(secondsLeft - 1), 20L);
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> showCountdownNumber(secondsLeft - 1), 20L);
     }
     
     /**

@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.teamrace;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -12,7 +13,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
@@ -24,7 +24,7 @@ public class TeamRaceManager {
 
     private final ChallengeUtil plugin;
     private final LanguageManager lang;
-    private BukkitRunnable compassUpdateTask;
+    private Object compassUpdateTask;
     private static final long COMPASS_UPDATE_INTERVAL = 20L; // 1 second
     
     // Track which team each player is currently tracking (defaults to nearest team)
@@ -89,7 +89,7 @@ public class TeamRaceManager {
      */
     public void stop() {
         if (compassUpdateTask != null) {
-            compassUpdateTask.cancel();
+            FoliaSchedulerUtil.cancelTask(compassUpdateTask);
             compassUpdateTask = null;
         }
         playerTrackedTeam.clear();
@@ -155,57 +155,51 @@ public class TeamRaceManager {
      * or to the end portal once someone has entered the End
      */
     private void startCompassUpdateTask() {
-        compassUpdateTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                List<String> teamNames = getActiveTeamNames();
+        compassUpdateTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
+            List<String> teamNames = getActiveTeamNames();
 
-                for (String teamName : teamNames) {
-                    Set<UUID> teamMembers = plugin.getDataManager().getPlayersInTeam(teamName);
+            for (String teamName : teamNames) {
+                Set<UUID> teamMembers = plugin.getDataManager().getPlayersInTeam(teamName);
+                
+                for (UUID memberId : teamMembers) {
+                    Player player = Bukkit.getPlayer(memberId);
+                    if (player == null || !player.isOnline()) {
+                        continue;
+                    }
+
+                    // If someone has entered the End, point compass to end portal
+                    if (endPortalLocation != null) {
+                        player.setCompassTarget(endPortalLocation);
+                        updateCompassDisplayForEndPortal(player, teamName);
+                        continue;
+                    }
+
+                    // Get the team this player is tracking (or find nearest)
+                    String trackedTeam = playerTrackedTeam.get(memberId);
+                    String nearestTeam = findNearestEnemyTeam(player, teamName, teamNames);
                     
-                    for (UUID memberId : teamMembers) {
-                        Player player = Bukkit.getPlayer(memberId);
-                        if (player == null || !player.isOnline()) {
-                            continue;
-                        }
-
-                        // If someone has entered the End, point compass to end portal
-                        if (endPortalLocation != null) {
-                            player.setCompassTarget(endPortalLocation);
-                            updateCompassDisplayForEndPortal(player, teamName);
-                            continue;
-                        }
-
-                        // Get the team this player is tracking (or find nearest)
-                        String trackedTeam = playerTrackedTeam.get(memberId);
-                        String nearestTeam = findNearestEnemyTeam(player, teamName, teamNames);
+                    // If no tracked team set, or tracked team has no players, use nearest
+                    if (trackedTeam == null || trackedTeam.equals(teamName) || 
+                        plugin.getDataManager().getPlayersInTeam(trackedTeam).isEmpty()) {
+                        trackedTeam = nearestTeam;
+                        playerTrackedTeam.put(memberId, trackedTeam);
+                    }
+                    
+                    // Find nearest member of the tracked team
+                    Player nearestEnemy = findNearestMemberOfTeam(player, trackedTeam);
+                    
+                    if (nearestEnemy != null) {
+                        // Update compass to point to tracked enemy
+                        Location targetLoc = nearestEnemy.getLocation();
+                        player.setCompassTarget(targetLoc);
                         
-                        // If no tracked team set, or tracked team has no players, use nearest
-                        if (trackedTeam == null || trackedTeam.equals(teamName) || 
-                            plugin.getDataManager().getPlayersInTeam(trackedTeam).isEmpty()) {
-                            trackedTeam = nearestTeam;
-                            playerTrackedTeam.put(memberId, trackedTeam);
-                        }
-                        
-                        // Find nearest member of the tracked team
-                        Player nearestEnemy = findNearestMemberOfTeam(player, trackedTeam);
-                        
-                        if (nearestEnemy != null) {
-                            // Update compass to point to tracked enemy
-                            Location targetLoc = nearestEnemy.getLocation();
-                            player.setCompassTarget(targetLoc);
-                            
-                            // Update compass display
-                            boolean isClosest = trackedTeam != null && trackedTeam.equals(nearestTeam);
-                            updateCompassDisplay(player, teamName, trackedTeam, isClosest);
-                        }
+                        // Update compass display
+                        boolean isClosest = trackedTeam != null && trackedTeam.equals(nearestTeam);
+                        updateCompassDisplay(player, teamName, trackedTeam, isClosest);
                     }
                 }
             }
-        };
-
-        // Run every second
-        compassUpdateTask.runTaskTimer(plugin, 0L, COMPASS_UPDATE_INTERVAL);
+        }, 0L, COMPASS_UPDATE_INTERVAL);
     }
 
     /**

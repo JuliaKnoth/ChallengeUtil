@@ -161,7 +161,7 @@ public class VersionChecker {
         checkForUpdate().thenAccept(updateAvailable -> {
             if (updateAvailable && latestVersion != null) {
                 // Run on main thread with null check for language manager
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                FoliaSchedulerUtil.runTask(plugin, () -> {
                     try {
                         String downloadUrlFinal = downloadUrl != null ? downloadUrl : "https://modrinth.com/plugin/" + modrinthProjectId;
                         

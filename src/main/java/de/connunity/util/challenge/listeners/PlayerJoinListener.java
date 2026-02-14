@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.VersionChecker;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -45,7 +46,7 @@ public class PlayerJoinListener implements Listener {
         boolean firstJoin = !player.hasPlayedBefore();
         
         // Teleport player to the correct spawn location based on which world they're in
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
             
             if (currentWorldName.equals(waitingRoomName)) {
                 // Player is in waiting room - always teleport to waiting room spawn
@@ -106,7 +107,7 @@ public class PlayerJoinListener implements Listener {
         spawn.setPitch(0);
         spawn.setYaw(0);
         
-        player.teleport(spawn);
+        FoliaSchedulerUtil.teleport(player, spawn);
         
         // Set player to adventure mode in waiting room
         player.setGameMode(GameMode.ADVENTURE);
@@ -130,7 +131,7 @@ public class PlayerJoinListener implements Listener {
         
         // Use the world's spawn location (set by FullResetCommand after chunks load)
         Location spawn = speedrunWorld.getSpawnLocation();
-        player.teleport(spawn);
+        FoliaSchedulerUtil.teleport(player, spawn);
         plugin.getLogger().info("Teleported " + player.getName() + " to speedrun world spawn at Y=" + spawn.getBlockY());
     }
     
@@ -175,7 +176,7 @@ public class PlayerJoinListener implements Listener {
         player.setStatistic(Statistic.TIME_SINCE_REST, 0);
         
         // Reset all advancements/achievements (only on full reset)
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        FoliaSchedulerUtil.runTask(plugin, () -> {
             // Reset all advancements by iterating through all of them
             Bukkit.advancementIterator().forEachRemaining(advancement -> {
                 if (advancement != null) {
@@ -233,12 +234,12 @@ public class PlayerJoinListener implements Listener {
         }
         
         // Check asynchronously to avoid blocking player login (important for 24/7 servers)
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        FoliaSchedulerUtil.runTaskAsynchronously(plugin, () -> {
             try {
                 versionChecker.checkForUpdate().thenAccept(updateAvailable -> {
                     if (updateAvailable && versionChecker.getLatestVersion() != null) {
                         // Schedule message on main thread with player validation
-                        Bukkit.getScheduler().runTask(plugin, () -> {
+                        FoliaSchedulerUtil.runTask(plugin, () -> {
                             try {
                                 // Validate player is still online (could have logged out during async check)
                                 if (player == null || !player.isOnline()) {

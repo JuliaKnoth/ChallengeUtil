@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -12,7 +13,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
@@ -31,7 +31,7 @@ public class TimedRandomItemListener implements Listener {
     private final Random random = new Random();
     
     // Task that runs every second to check timer
-    private BukkitTask itemTask = null;
+    private Object itemTask = null;
     
     // Time tracking for progressive loot
     private long challengeStartTime = 0;
@@ -341,11 +341,11 @@ public class TimedRandomItemListener implements Listener {
         
         // Cancel any existing task
         if (itemTask != null) {
-            itemTask.cancel();
+            FoliaSchedulerUtil.cancelTask(itemTask);
         }
         
         // Start task that checks every second (20 ticks) to see if timer is at :00 or :30
-        itemTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        itemTask = FoliaSchedulerUtil.runTaskTimer(plugin, () -> {
             checkAndGiveItems();
         }, 20L, 20L); // Check every second (20 ticks)
         
@@ -393,7 +393,7 @@ public class TimedRandomItemListener implements Listener {
      */
     public void stop() {
         if (itemTask != null) {
-            itemTask.cancel();
+            FoliaSchedulerUtil.cancelTask(itemTask);
             itemTask = null;
         }
         challengeStartTime = 0;

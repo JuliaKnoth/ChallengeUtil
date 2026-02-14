@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -62,7 +63,7 @@ public class PlayerRespawnListener implements Listener {
             
             // Spectators: Keep in spectator mode
             if ("spectator".equals(team)) {
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                     player.setGameMode(org.bukkit.GameMode.SPECTATOR);
                 }, 1L);
                 return;
@@ -111,7 +112,7 @@ public class PlayerRespawnListener implements Listener {
                 event.setRespawnLocation(respawnLocation);
                 
                 // Set player to adventure mode in waiting room after respawn
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                     player.setGameMode(org.bukkit.GameMode.ADVENTURE);
                 }, 1L);
                 

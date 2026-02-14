@@ -2,6 +2,7 @@ name: ChallengeUtil
 version: '${project.version}'
 main: de.connunity.util.challenge.ChallengeUtil
 api-version: '1.21.11'
+folia-supported: true
 author: Julia
 description: Utilities für Challenge-Server mit Timer und Holodeck-Reset-System
 softdepend: [PlaceholderAPI]

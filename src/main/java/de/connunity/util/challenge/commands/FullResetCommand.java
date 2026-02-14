@@ -2,6 +2,8 @@ package de.connunity.util.challenge.commands;
 
 import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.ColorUtil;
+import de.connunity.util.challenge.FoliaSchedulerUtil;
+import de.connunity.util.challenge.FoliaWorldPoolManager;
 import de.connunity.util.challenge.timer.TimerManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -46,9 +48,9 @@ public class FullResetCommand implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, 
                             @NotNull String label, @NotNull String[] args) {
         
-    if (!sender.hasPermission("challenge.fullreset") && !sender.hasPermission("challenge.host")) {
-        sender.sendMessage(Component.text("Du hast keine Berechtigung, diesen Befehl zu verwenden!", 
-            NamedTextColor.RED));
+        if (!sender.hasPermission("challenge.fullreset") && !sender.hasPermission("challenge.host")) {
+            sender.sendMessage(Component.text("Du hast keine Berechtigung, diesen Befehl zu verwenden!", 
+                NamedTextColor.RED));
             return true;
         }
         
@@ -57,10 +59,145 @@ public class FullResetCommand implements CommandExecutor {
             return true;
         }
         
-        // Start the "Holodeck" reset process
-        performHolodeckReset(sender.getName());
+        // Check if world pool mode is enabled (Folia or manual)
+        if (FoliaWorldPoolManager.isEnabled(plugin)) {
+            // Use world pool rotation instead of world deletion
+            performPoolReset(sender.getName());
+        } else {
+            // Use traditional "Holodeck" reset process
+            performHolodeckReset(sender.getName());
+        }
         
         return true;
+    }
+    
+    /**
+     * The "World Pool" Strategy - Folia-compatible reset
+     * Rotates between pre-generated worlds with different seeds
+     */
+    public void performPoolReset(String initiator) {
+        plugin.setResetInProgress(true);
+        
+        FoliaWorldPoolManager poolManager = plugin.getWorldPoolManager();
+        if (poolManager == null) {
+            plugin.getLogger().severe("World Pool Manager is not initialized!");
+            Bukkit.broadcast(Component.text("Reset fehlgeschlagen! World Pool nicht initialisiert.", NamedTextColor.RED));
+            plugin.setResetInProgress(false);
+            return;
+        }
+        
+        // Get configuration
+        String waitingRoomName = plugin.getConfig().getString("world.waiting-room", "waiting_room");
+        
+        // Get current world info before rotating
+        String oldWorldName = poolManager.getCurrentWorldName();
+        long oldSeed = poolManager.getCurrentSeed();
+        
+        // Get waiting room world (must exist!)
+        World waitingRoom = Bukkit.getWorld(waitingRoomName);
+        if (waitingRoom == null) {
+            plugin.getLogger().severe("FATAL: Waiting room '" + waitingRoomName + "' does not exist!");
+            plugin.getLogger().severe("Please create the waiting room world first. See setup guide.");
+            Bukkit.broadcast(Component.text("Reset fehlgeschlagen! Warteraum nicht gefunden. Bitte Admin kontaktieren.", 
+                NamedTextColor.RED));
+            plugin.setResetInProgress(false);
+            return;
+        }
+        
+        // Reset timer and clear all persistent data
+        timerManager.reset();
+        plugin.getDataManager().clearAllData();
+        
+        // Deactivate custom end fight if active
+        if (plugin.getCustomEndFightManager() != null) {
+            plugin.getCustomEndFightManager().deactivate();
+        }
+        
+        // Reset listeners for new match
+        if (plugin.getBlockBreakRandomizerListener() != null) {
+            plugin.getBlockBreakRandomizerListener().resetForNewMatch();
+        }
+        
+        // Reset all players (clear inventory except host item, reset HP, level, achievements)
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            resetPlayer(player);
+        }
+        plugin.getLogger().info("Reset all players for full reset (" + Bukkit.getOnlinePlayers().size() + " players)");
+        
+        // Rotate to next world in pool
+        World nextWorld = poolManager.rotateToNextWorld();
+        long newSeed = poolManager.getCurrentSeed();
+        
+        // Log
+        plugin.getLogger().info("═══════════════════════════════════");
+        plugin.getLogger().info("WORLD POOL RESET initiated by " + initiator);
+        plugin.getLogger().info("Rotating from: " + oldWorldName + " (seed: " + oldSeed + ")");
+        plugin.getLogger().info("Rotating to: " + poolManager.getCurrentWorldName() + " (seed: " + newSeed + ")");
+        plugin.getLogger().info("═══════════════════════════════════");
+        
+        // PHASE 1: Teleport all players to waiting room
+        List<Player> playersToTeleport = new ArrayList<>(Bukkit.getOnlinePlayers());
+        
+        plugin.getLogger().info("Teleporting " + playersToTeleport.size() + " players to waiting room");
+        
+        Location waitingRoomSpawn = getWaitingRoomSpawn(waitingRoom);
+        
+        for (Player player : playersToTeleport) {
+            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
+            player.sendMessage(Component.text("Neue Welt wird geladen!", NamedTextColor.RED, TextDecoration.BOLD));
+            player.sendMessage(Component.text("Neuer Seed: " + newSeed, NamedTextColor.YELLOW));
+            player.sendMessage(Component.text("Du wirst zum Warteraum teleportiert...", NamedTextColor.YELLOW));
+            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
+            
+            // Teleport to waiting room
+            FoliaSchedulerUtil.teleport(player, waitingRoomSpawn);
+            player.setGameMode(org.bukkit.GameMode.ADVENTURE);
+        }
+        
+        plugin.getLogger().info("Players teleported to waiting room. Preparing new world...");
+        
+        // PHASE 2: Small delay, then load spawn chunks and teleport players
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
+            finishPoolReset(nextWorld, newSeed, playersToTeleport);
+        }, 40L); // 2 second delay to ensure teleportation is complete
+    }
+    
+    /**
+     * Finish the pool reset by loading spawn chunks and teleporting players
+     */
+    private void finishPoolReset(World newWorld, long seed, List<Player> players) {
+        if (newWorld == null) {
+            plugin.getLogger().severe("FAILED: New world is null!");
+            Bukkit.broadcast(Component.text("Reset fehlgeschlagen! Neue Welt nicht geladen.", NamedTextColor.RED));
+            plugin.setResetInProgress(false);
+            return;
+        }
+        
+        plugin.getLogger().info("Preparing new world: " + newWorld.getName() + " (seed: " + seed + ")");
+        
+        // Set time to day
+        newWorld.setTime(1000L);
+        
+        // Apply difficulty setting
+        String difficultyStr = plugin.getDataManager().getSavedDifficulty();
+        if (difficultyStr == null) {
+            difficultyStr = plugin.getConfig().getString("world.difficulty", "NORMAL");
+        }
+        try {
+            Difficulty difficulty = Difficulty.valueOf(difficultyStr.toUpperCase());
+            newWorld.setDifficulty(difficulty);
+        } catch (IllegalArgumentException e) {
+            newWorld.setDifficulty(Difficulty.NORMAL);
+        }
+        
+        // Apply saved gamerules
+        plugin.applySavedGamerulesToWorld(newWorld);
+        
+        // Save seed to persistence
+        plugin.getDataManager().saveWorldSeed(seed);
+        
+        // Load spawn chunks and teleport players
+        loadSpawnChunksAndSetSpawn(newWorld, players);
     }
     
     /**
@@ -129,14 +266,14 @@ public class FullResetCommand implements CommandExecutor {
             player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
             
             // Teleport to waiting room
-            player.teleport(waitingRoomSpawn);
+            FoliaSchedulerUtil.teleport(player, waitingRoomSpawn);
             player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         }
         
         plugin.getLogger().info("Players teleported to waiting room. Starting world reset...");
         
         // PHASE 2: Small delay, then delete and regenerate
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
             deleteAndRegenerateWorld(speedrunWorldName, newSeed, playersToTeleport);
         }, 40L); // 2 second delay to ensure teleportation is complete
     }
@@ -160,7 +297,7 @@ public class FullResetCommand implements CommandExecutor {
             // Fallback: teleport to waiting room
             World waitingRoom = Bukkit.getWorld(plugin.getConfig().getString("world.waiting-room", "waiting_room"));
             if (waitingRoom != null) {
-                player.teleport(getWaitingRoomSpawn(waitingRoom));
+                FoliaSchedulerUtil.teleport(player, getWaitingRoomSpawn(waitingRoom));
                 // Set player to adventure mode in waiting room
                 player.setGameMode(org.bukkit.GameMode.ADVENTURE);
             }
@@ -181,7 +318,7 @@ public class FullResetCommand implements CommandExecutor {
         countdownMsg = countdownMsg.replace("{seconds}", String.valueOf(seconds));
         Bukkit.broadcast(ColorUtil.parse(countdownMsg));
         
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
             runCountdown(seconds - 1, onComplete);
         }, 20L);
     }
@@ -225,7 +362,7 @@ public class FullResetCommand implements CommandExecutor {
         }
         
         // Delete world folders ASYNCHRONOUSLY
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        FoliaSchedulerUtil.runTaskAsynchronously(plugin, () -> {
             File serverRoot = Bukkit.getWorldContainer();
             
             try {
@@ -240,7 +377,7 @@ public class FullResetCommand implements CommandExecutor {
                 e.printStackTrace();
                 
                 // Reset flag on error
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                FoliaSchedulerUtil.runTask(plugin, () -> {
             plugin.setResetInProgress(false);
             Bukkit.broadcast(Component.text("Welt-Löschung fehlgeschlagen! Prüfe die Konsole auf Fehler.", 
                 NamedTextColor.RED));
@@ -249,7 +386,7 @@ public class FullResetCommand implements CommandExecutor {
             }
             
             // PHASE 4: Regenerate world (must be on main thread)
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            FoliaSchedulerUtil.runTask(plugin, () -> {
                 try {
                     regenerateWorld(worldName, seed, players);
                 } catch (Exception e) {
@@ -267,6 +404,21 @@ public class FullResetCommand implements CommandExecutor {
      * Regenerate the speedrun world with new seed
      */
     private void regenerateWorld(String worldName, long seed, List<Player> players) {
+        // Check if running on Folia - dynamic world creation is not supported
+        if (FoliaSchedulerUtil.isFolia()) {
+            plugin.getLogger().severe("=".repeat(60));
+            plugin.getLogger().severe("FOLIA LIMITATION: Dynamic world creation is not supported!");
+            plugin.getLogger().severe("The /fullreset command cannot be used on Folia servers.");
+            plugin.getLogger().severe("Please restart your server to reset the world.");
+            plugin.getLogger().severe("=".repeat(60));
+            
+            Bukkit.broadcast(Component.text("⚠ World reset is not supported on Folia!", NamedTextColor.RED));
+            Bukkit.broadcast(Component.text("Please contact the server admin to restart the server.", NamedTextColor.YELLOW));
+            
+            plugin.setResetInProgress(false);
+            return;
+        }
+        
         plugin.getLogger().info("Regenerating world: " + worldName + " with seed: " + seed);
         
         try {
@@ -430,7 +582,7 @@ public class FullResetCommand implements CommandExecutor {
                     
                     // When all chunks are loaded, set spawn and bring players back
                     if (loadedChunks[0] == totalChunks) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
+                        FoliaSchedulerUtil.runTask(plugin, () -> {
                             plugin.getLogger().info("All spawn chunks loaded! Finding safe spawn point...");
                             
                             // Find safe spawn on solid ground
@@ -458,7 +610,7 @@ public class FullResetCommand implements CommandExecutor {
         plugin.getLogger().info("World reset complete! Notifying players in waiting room...");
         
         // Wait a moment for everything to stabilize
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
             
             // Also broadcast to everyone on the server
             Bukkit.broadcast(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
@@ -486,7 +638,7 @@ public class FullResetCommand implements CommandExecutor {
         String thisServerName = plugin.getConfig().getString("proxy.this-server-name", "speedrun");
         
         // Wait a moment for everything to stabilize
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
             
             for (String playerName : playerNames) {
                 // Try to send them back via proxy
@@ -578,7 +730,7 @@ public class FullResetCommand implements CommandExecutor {
         plugin.getLogger().info("Safe spawn found at X=" + safeSpawn.getBlockX() + " Y=" + safeSpawn.getBlockY() + " Z=" + safeSpawn.getBlockZ());
         
         // Small delay, then teleport players (1 second)
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
             
             plugin.getLogger().info("Starting player teleportation...");
             
@@ -591,8 +743,8 @@ public class FullResetCommand implements CommandExecutor {
                         final int delay = successCount * 5; // 5 ticks (0.25s) between each player
                         final Location finalSpawn = safeSpawn.clone();
                         
-                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                            player.teleport(finalSpawn);
+                        FoliaSchedulerUtil.runTaskLater(plugin, () -> {
+                            FoliaSchedulerUtil.teleport(player, finalSpawn);
                             plugin.getLogger().info("✓ Teleported " + player.getName() + " to spawn");
                         }, delay);
                         
@@ -609,7 +761,7 @@ public class FullResetCommand implements CommandExecutor {
             
             // Broadcast completion message after all players teleported
             final int totalDelay = (successCount * 5) + 20; // Add 1 second after last player
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            FoliaSchedulerUtil.runTaskLater(plugin, () -> {
                 
                 String completeMsg = plugin.getConfig().getString("reset.messages.reset-complete",
                         "<gold><bold>═══════════════════════════════════\n<green><bold>WORLD RESET COMPLETE!\n<yellow>Teleporting you back...\n<gold><bold>═══════════════════════════════════");
