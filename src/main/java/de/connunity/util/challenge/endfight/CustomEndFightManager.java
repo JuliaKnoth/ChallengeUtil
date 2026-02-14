@@ -593,6 +593,19 @@ public class CustomEndFightManager {
         }
         
         try {
+            // Apply glow effect for egg holder
+            eggHolder.addPotionEffect(new PotionEffect(
+                PotionEffectType.GLOWING,
+                Integer.MAX_VALUE,
+                0,
+                false,
+                false
+            ));
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error applying egg holder effects: " + e.getMessage());
+        }
+        
+        try {
             // Create boss bar for egg holder's health
             createEggHolderBossBar(eggHolder);
         } catch (Exception e) {
@@ -883,6 +896,19 @@ public class CustomEndFightManager {
             newHolder.setHealth(200.0);
         } catch (Exception e) {
             plugin.getLogger().severe("Error setting new egg holder health: " + e.getMessage());
+        }
+        
+        // Apply glow effect for new egg holder
+        try {
+            newHolder.addPotionEffect(new PotionEffect(
+                PotionEffectType.GLOWING,
+                Integer.MAX_VALUE,
+                0,
+                false,
+                false
+            ));
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error applying new egg holder effects: " + e.getMessage());
         }
         
         // Update boss bar

@@ -6,7 +6,7 @@
 
     <groupId>de.connunity.util.challenge</groupId>
     <artifactId>ChallengeUtil</artifactId>
-    <version>Alpha-1.4.80</version>
+    <version>Alpha-1.4.86</version>
     <packaging>jar</packaging>
 
     <name>ChallengeUtil</name>

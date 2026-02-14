@@ -32,6 +32,17 @@ public class PlayerRespawnListener implements Listener {
         World deathWorld = player.getWorld();
         String deathWorldName = deathWorld.getName();
         
+        // Check if custom end fight is active with an egg holder - respawn in the End
+        if (plugin.getCustomEndFightManager().isActive() && 
+            plugin.getCustomEndFightManager().getEggHolder() != null) {
+            Location endSpawn = plugin.getCustomEndFightManager().getEndSpawnLocation();
+            if (endSpawn != null) {
+                event.setRespawnLocation(endSpawn);
+                plugin.getLogger().info("Player " + player.getName() + " respawning in the End (custom end fight active)");
+                return;
+            }
+        }
+        
         // Check if manhunt mode is enabled and timer is running
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         boolean isTimerRunning = plugin.getTimerManager().isRunning();
