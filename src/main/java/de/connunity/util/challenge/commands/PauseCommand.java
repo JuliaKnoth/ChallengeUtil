@@ -47,6 +47,10 @@ public class PauseCommand implements CommandExecutor {
         }
         
         timerManager.pause();
+        
+        // Pause timed item challenge as well
+        plugin.getTimedRandomItemListener().pause();
+        
         sender.sendMessage(lang.getComponent("pause.timer-paused"));
         
         return true;

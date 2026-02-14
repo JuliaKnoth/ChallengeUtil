@@ -35,7 +35,7 @@ public class ManhuntTeamListener implements Listener {
         }
         
         // Check if timer is running
-        if (!plugin.getTimerManager().isRunning()) {
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
             return;
         }
         

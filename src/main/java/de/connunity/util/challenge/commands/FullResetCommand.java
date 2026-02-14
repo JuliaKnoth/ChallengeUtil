@@ -92,6 +92,11 @@ public class FullResetCommand implements CommandExecutor {
         timerManager.reset();
         plugin.getDataManager().clearAllData();
         
+        // Deactivate custom end fight if active
+        if (plugin.getCustomEndFightManager() != null) {
+            plugin.getCustomEndFightManager().deactivate();
+        }
+        
         // Reset listeners for new match
         if (plugin.getBlockBreakRandomizerListener() != null) {
             plugin.getBlockBreakRandomizerListener().resetForNewMatch();
@@ -1000,11 +1005,19 @@ public class FullResetCommand implements CommandExecutor {
             player.getInventory().setItem(8, hostItem);
         }
         
+        // Reset max health to default
+        player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(20.0);
+        
         // Reset health
-        player.setHealth(player.getMaxHealth());
+        player.setHealth(20.0);
         player.setFoodLevel(20);
         player.setSaturation(5.0f);
         player.setExhaustion(0.0f);
+        
+        // Clear all potion effects
+        for (org.bukkit.potion.PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
         
         // Reset level and experience
         player.setLevel(0);

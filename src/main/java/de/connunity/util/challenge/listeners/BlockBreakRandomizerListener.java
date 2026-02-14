@@ -207,8 +207,8 @@ public class BlockBreakRandomizerListener implements Listener {
         }
         
         // Check if timer is running
-        if (!plugin.getTimerManager().isRunning()) {
-            return; // Challenge not active
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
+            return; // Challenge not active or paused
         }
         
         Player player = event.getPlayer();

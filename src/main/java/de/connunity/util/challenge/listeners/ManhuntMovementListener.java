@@ -4,6 +4,7 @@ import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 
@@ -34,7 +35,7 @@ public class ManhuntMovementListener implements Listener {
         this.lang = plugin.getLanguageManager();
     }
     
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
         // PERFORMANCE: Check if player actually moved position first (not just head rotation)
         if (!hasPlayerMoved(event)) {
@@ -53,7 +54,7 @@ public class ManhuntMovementListener implements Listener {
         }
         
         // Check if timer is running
-        if (!plugin.getTimerManager().isRunning()) {
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
             return;
         }
         

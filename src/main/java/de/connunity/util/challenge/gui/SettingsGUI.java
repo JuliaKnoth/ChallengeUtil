@@ -473,6 +473,7 @@ public class SettingsGUI {
         // Row 0 (0-8): Team Modes (top row)
         gui.setItem(1, createChallengeItem("manhunt_mode", Material.COMPASS));
         gui.setItem(2, createChallengeItem("team_race_mode", Material.RECOVERY_COMPASS));
+        gui.setItem(3, createHiddenToggle("custom_end_fight"));
         
         // Row 1 (9-17): Empty
         
@@ -507,6 +508,17 @@ public class SettingsGUI {
         }
         
         player.openInventory(gui);
+    }
+    
+    /**
+     * Create a hidden toggle that looks like a filler glass pane
+     */
+    private ItemStack createHiddenToggle(String challengeName) {
+        ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text(" "));
+        item.setItemMeta(meta);
+        return item;
     }
     
     /**
@@ -926,6 +938,8 @@ public class SettingsGUI {
                 return "Activate Manhunt Mode";
             case "team_race_mode":
                 return "Manhunt Race - 2-10 Teams";
+            case "custom_end_fight":
+                return "Custom End Fight: Chase the Egg";
             case "chunk_items":
                 return "Receive random item per chunk";
             case "block_break_randomizer":

@@ -1,5 +1,6 @@
 package de.connunity.util.challenge.timer;
 
+import de.connunity.util.challenge.ColorUtil;
 import de.connunity.util.challenge.data.DataManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,6 +21,7 @@ public class TimerManager {
     private boolean running = false;
     private boolean paused = false;
     private boolean blinkState = false; // For blinking effect when paused
+    private int gradientOffset = 0; // For animated gradient effect
     
     // Real-world time tracking (not game ticks)
     private long lastUpdateTime = 0;
@@ -99,20 +101,29 @@ public class TimerManager {
         // Track real-world time instead of relying on ticks
         lastUpdateTime = System.currentTimeMillis();
         
+        // Update immediately on start
+        updateActionBar();
+        
         timerTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (!paused) {
                 long currentTime = System.currentTimeMillis();
                 long elapsedMillis = currentTime - lastUpdateTime;
                 
-                // Add elapsed seconds (allows for lag compensation)
-                long elapsedSeconds = elapsedMillis / 1000;
-                if (elapsedSeconds >= 1) {
+                // Check if at least 1 second has passed
+                if (elapsedMillis >= 1000) {
+                    // Add elapsed seconds (allows for lag compensation if multiple seconds passed)
+                    long elapsedSeconds = elapsedMillis / 1000;
                     totalSeconds += elapsedSeconds;
-                    lastUpdateTime = currentTime - (elapsedMillis % 1000); // Keep remainder for accuracy
+                    // Keep remainder for accuracy - this ensures we stay synced to real time
+                    lastUpdateTime = currentTime - (elapsedMillis % 1000);
+                    // Cycle gradient offset for animation every 10 seconds
+                    if (totalSeconds % 10 == 0) {
+                        gradientOffset = (gradientOffset + 1) % 10;
+                    }
                     updateActionBar();
                 }
             }
-        }, 0L, 10L); // Check every 0.5 seconds, but uses real milliseconds
+        }, 2L, 2L); // Check every 0.1 seconds (2 ticks) for smooth, responsive updates
     }
     
     /**
@@ -212,25 +223,31 @@ public class TimerManager {
         if (paused) {
             // Blinking red when paused
             if (blinkState) {
-                message = Component.text()
-                        .append(Component.text("⏸ ", NamedTextColor.RED, TextDecoration.BOLD))
-                        .append(Component.text(timeString, NamedTextColor.RED, TextDecoration.BOLD))                        
-                        .build();
+                message = ColorUtil.parse("<bold><red>⏸ " + timeString + "</red></bold>");
             } else {
-                // Invisible/empty during blink off state for dramatic effect
-                message = Component.text()
-                        .append(Component.text("⏸ ", NamedTextColor.DARK_RED, TextDecoration.BOLD))
-                        .append(Component.text(timeString, NamedTextColor.DARK_RED, TextDecoration.BOLD))                        
-                        .build();
+                // Darker red during blink off state
+                message = ColorUtil.parse("<bold><dark_red>⏸ " + timeString + "</dark_red></bold>");
             }
         } else {
-            // Normal green timer when running
-            message = Component.text()
-                    .append(Component.text(timeString, NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
-                    .build();
+            // Animated gradient between light_purple and purple
+            message = ColorUtil.parse(createGradientTimer(timeString));
         }
         
         Bukkit.getOnlinePlayers().forEach(player -> player.sendActionBar(message));
+    }
+    
+    /**
+     * Create an animated gradient timer using MiniMessage
+     * Smoothly transitions between light_purple and dark_purple (Minecraft colors)
+     */
+    private String createGradientTimer(String timeString) {
+        // Use MiniMessage's gradient tag for smooth color interpolation
+        // Reverse gradient direction based on offset for pulsing animation effect
+        if (gradientOffset % 2 == 0) {
+            return "<bold><gradient:light_purple:dark_purple>" + timeString + "</gradient></bold>";
+        } else {
+            return "<bold><gradient:light_purple:dark_purple>" + timeString + "</gradient></bold>";        
+        }
     }
     
     /**
@@ -242,14 +259,29 @@ public class TimerManager {
     }
     
     /**
-     * Format seconds into HH:MM:SS
+     * Format seconds into xd xh xm xs format
+     * Only shows days when >= 1 day, hours when >= 1 hour, minutes when >= 1 minute
      */
     private String formatTime(long seconds) {
-        long hours = seconds / 3600;
+        long days = seconds / 86400;
+        long hours = (seconds % 86400) / 3600;
         long minutes = (seconds % 3600) / 60;
         long secs = seconds % 60;
         
-        return String.format("%02d:%02d:%02d", hours, minutes, secs);
+        StringBuilder result = new StringBuilder();
+        
+        if (days > 0) {
+            result.append(days).append("d ");
+        }
+        if (hours > 0 || days > 0) {
+            result.append(hours).append("h ");
+        }
+        if (minutes > 0 || hours > 0 || days > 0) {
+            result.append(minutes).append("m ");
+        }
+        result.append(secs).append("s");
+        
+        return result.toString();
     }
     
     // Getters

@@ -34,12 +34,45 @@ public class PlayerDeathListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
+        Player killer = player.getKiller();
+        
+        boolean isTimerRunning = plugin.getTimerManager().isRunning();
+        boolean isTimerPaused = plugin.getTimerManager().isPaused();
+        
+        // Check if custom end fight is active and this is the egg holder dying
+        Boolean customEndFightEnabled = plugin.getDataManager().getSavedChallenge("custom_end_fight");
+        if (customEndFightEnabled != null && customEndFightEnabled && isTimerRunning && !isTimerPaused) {
+            if (plugin.getCustomEndFightManager().isActive() && 
+                plugin.getCustomEndFightManager().getEggHolder() != null &&
+                plugin.getCustomEndFightManager().getEggHolder().equals(player)) {
+                
+                // Egg holder died - determine who gets the egg
+                Player newHolder = null;
+                
+                if (killer != null && !killer.equals(player)) {
+                    // Killed by another player directly
+                    newHolder = killer;
+                } else {
+                    // Check if egg holder died to void or other environmental damage
+                    // Use the last player who damaged them
+                    Player lastDamager = plugin.getCustomEndFightManager().getLastDamager();
+                    if (lastDamager != null && lastDamager.isOnline() && !lastDamager.equals(player)) {
+                        newHolder = lastDamager;
+                    }
+                }
+                
+                if (newHolder != null) {
+                    // Transfer egg holder to the new holder
+                    plugin.getCustomEndFightManager().onEggHolderKilled(newHolder);
+                    return; // Don't apply other death logic
+                }
+            }
+        }
         
         // Check if manhunt mode is enabled and timer is running
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
-        boolean isTimerRunning = plugin.getTimerManager().isRunning();
         
-        if (manhuntEnabled != null && manhuntEnabled && isTimerRunning) {
+        if (manhuntEnabled != null && manhuntEnabled && isTimerRunning && !isTimerPaused) {
             String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
             
             // Spectators should remain in spectator mode (they shouldn't die anyway, but just in case)

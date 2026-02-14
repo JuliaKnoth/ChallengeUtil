@@ -6,6 +6,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -194,13 +195,12 @@ public class ChunkItemChallengeListener implements Listener {
         reset();
     }
     
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
-        // PERFORMANCE: Check if player actually moved to a new block (ignore head rotation)
-        if (event.getFrom().getBlockX() == event.getTo().getBlockX() &&
-            event.getFrom().getBlockY() == event.getTo().getBlockY() &&
-            event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
-            return; // Player didn't move to a new block, just rotated head
+        // CRITICAL PERFORMANCE: Check if player moved to a different chunk (not just a new block)
+        // This is a chunk-based challenge, so we only care about chunk changes
+        if (event.getFrom().getChunk().equals(event.getTo().getChunk())) {
+            return; // Player is still in the same chunk - skip all processing
         }
         
         // OPTIMIZATION: Refresh cache periodically (avoid constant disk reads)
@@ -215,7 +215,7 @@ public class ChunkItemChallengeListener implements Listener {
         }
         
         // Check if timer is running
-        if (!plugin.getTimerManager().isRunning()) {
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
             return;
         }
         

@@ -187,6 +187,9 @@ public class StartCommand implements CommandExecutor {
         if (timerManager.isPaused()) {
             timerManager.resume();
             
+            // Resume timed item challenge if it was started
+            plugin.getTimedRandomItemListener().resume();
+            
             // Broadcast to all players
             Bukkit.broadcast(lang.getComponent("start.timer-resumed"));
             return true;

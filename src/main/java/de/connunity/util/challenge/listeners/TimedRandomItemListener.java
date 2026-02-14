@@ -30,12 +30,17 @@ public class TimedRandomItemListener implements Listener {
     private final LanguageManager lang;
     private final Random random = new Random();
     
-    // Task that runs every 30 seconds
+    // Task that runs every second to check timer
     private BukkitTask itemTask = null;
-    private static final long ITEM_INTERVAL = 30 * 20L; // 30 seconds in ticks (20 ticks = 1 second)
     
     // Time tracking for progressive loot
     private long challengeStartTime = 0;
+    private long totalElapsedTime = 0; // Total elapsed time excluding paused time
+    private long pauseStartTime = 0; // When the challenge was paused
+    private boolean isPaused = false;
+    
+    // Track last item give time to avoid duplicates
+    private long lastItemGiveSecond = -1;
     
     // Loot pools based on elapsed time (progressive difficulty)
     private final Map<String, List<LootItem>> lootPools = new HashMap<>();
@@ -329,18 +334,58 @@ public class TimedRandomItemListener implements Listener {
      */
     public void start() {
         challengeStartTime = System.currentTimeMillis();
+        totalElapsedTime = 0;
+        isPaused = false;
+        pauseStartTime = 0;
+        lastItemGiveSecond = -1;
         
         // Cancel any existing task
         if (itemTask != null) {
             itemTask.cancel();
         }
         
-        // Start the repeating task that gives items every 30 seconds
+        // Start task that checks every second (20 ticks) to see if timer is at :00 or :30
         itemTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            giveItemsToAllPlayers();
-        }, ITEM_INTERVAL, ITEM_INTERVAL); // Start after 30 seconds, repeat every 30 seconds
+            checkAndGiveItems();
+        }, 20L, 20L); // Check every second (20 ticks)
         
         plugin.getLogger().info("Timed Random Item Challenge started!");
+    }
+    
+    /**
+     * Pause the challenge (called when /pause is executed)
+     */
+    public void pause() {
+        if (isPaused || itemTask == null) {
+            return; // Already paused or not running
+        }
+        
+        isPaused = true;
+        pauseStartTime = System.currentTimeMillis();
+        
+        // Update total elapsed time before pausing
+        if (challengeStartTime > 0) {
+            totalElapsedTime += (pauseStartTime - challengeStartTime);
+        }
+        
+        plugin.getLogger().info("Timed Random Item Challenge paused! Elapsed time: " + (totalElapsedTime / 1000) + "s");
+    }
+    
+    /**
+     * Resume the challenge (called when /pause is executed to unpause)
+     */
+    public void resume() {
+        if (!isPaused || itemTask == null) {
+            return; // Not paused or not running
+        }
+        
+        isPaused = false;
+        
+        // Reset the start time to now (excluding paused duration)
+        challengeStartTime = System.currentTimeMillis();
+        pauseStartTime = 0;
+        
+        plugin.getLogger().info("Timed Random Item Challenge resumed! Total elapsed time: " + (totalElapsedTime / 1000) + "s");
     }
     
     /**
@@ -352,6 +397,9 @@ public class TimedRandomItemListener implements Listener {
             itemTask = null;
         }
         challengeStartTime = 0;
+        totalElapsedTime = 0;
+        isPaused = false;
+        lastItemGiveSecond = -1;
         plugin.getLogger().info("Timed Random Item Challenge stopped!");
     }
     
@@ -360,6 +408,32 @@ public class TimedRandomItemListener implements Listener {
      */
     public void reset() {
         stop();
+    }
+    
+    /**
+     * Check timer and give items if at :00 or :30
+     */
+    private void checkAndGiveItems() {
+        // Check if challenge is enabled
+        Boolean challengeEnabled = plugin.getDataManager().getSavedChallenge("timed_random_item");
+        if (challengeEnabled == null || !challengeEnabled) {
+            return;
+        }
+        
+        // Check if timer is running and not paused
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
+            return;
+        }
+        
+        // Get current timer seconds
+        long totalSeconds = plugin.getTimerManager().getTotalSeconds();
+        long currentSecond = totalSeconds % 60;
+        
+        // Check if we're at :00 or :30 and haven't already given items this second
+        if ((currentSecond == 0 || currentSecond == 30) && lastItemGiveSecond != totalSeconds) {
+            lastItemGiveSecond = totalSeconds;
+            giveItemsToAllPlayers();
+        }
     }
     
     /**

@@ -105,7 +105,7 @@ public class ColorUtil {
             case "gelb":
                 return "<yellow>";
             case "lila":
-                return "<light_purple>";
+                return "<dark_purple>";
             case "aqua":
                 return "<aqua>";
             case "weiß":

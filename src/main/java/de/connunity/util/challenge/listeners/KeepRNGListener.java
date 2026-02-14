@@ -34,8 +34,8 @@ public class KeepRNGListener implements Listener {
         }
         
         // Check if the timer is running (challenge is active)
-        if (!plugin.getTimerManager().isRunning()) {
-            return; // Challenge not active
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
+            return; // Challenge not active or paused
         }
         
         Player player = event.getPlayer();

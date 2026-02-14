@@ -590,6 +590,7 @@ public class SettingsGUIListener implements Listener {
             // Row 0: Team Modes (top row)
             case 1: challengeName = "manhunt_mode"; break;
             case 2: challengeName = "team_race_mode"; break;
+            case 3: challengeName = "custom_end_fight"; break;
             
             // Row 2: RNG based stuff
             case 19: challengeName = "chunk_items"; break;
@@ -709,11 +710,18 @@ public class SettingsGUIListener implements Listener {
         // Save persistently
         plugin.getDataManager().saveChallenge(challengeName, newValue);
         
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("challenge", formatChallengeName(challengeName));
-        placeholders.put("status", newValue ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"));
-        player.sendMessage(lang.getComponent("settings.challenge-toggled", placeholders));
-        player.sendMessage(lang.getComponent("settings.challenge-saved"));
+        // Special hidden message for custom_end_fight
+        if (challengeName.equals("custom_end_fight")) {
+            player.sendMessage(net.kyori.adventure.text.Component.text("Custom End Fight: ", net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                .append(net.kyori.adventure.text.Component.text(newValue ? "ON" : "OFF", 
+                    newValue ? net.kyori.adventure.text.format.NamedTextColor.GREEN : net.kyori.adventure.text.format.NamedTextColor.RED)));
+        } else {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("challenge", formatChallengeName(challengeName));
+            placeholders.put("status", newValue ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"));
+            player.sendMessage(lang.getComponent("settings.challenge-toggled", placeholders));
+            player.sendMessage(lang.getComponent("settings.challenge-saved"));
+        }
         
         // Refresh GUI
         SettingsGUI gui = new SettingsGUI(plugin);

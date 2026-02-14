@@ -786,6 +786,44 @@ gui:
       no-desc1: "Abbrechen und zurück zum"
       no-desc2: "Einstellungsmenü"
 
+    # Challenges submenu
+    challenges-submenu:
+      title: "Herausforderungen"
+      status: "<gray>Status: {status}"
+      enabled: "<green>Aktiviert"
+      disabled: "<red>Deaktiviert"
+      click-toggle: "<yellow>Klicken zum Umschalten"
+      applied-note: "<green><italic>✓ Wird bei /start angewendet"
+      back-to-settings: "<yellow>← Zurück zu Einstellungen"
+      
+      # Challenge items
+      manhunt_mode: "Manhunt-Modus aktivieren"
+      manhunt_hint1: "<aqua><italic>Nutze /team runner oder /team hunter"
+      manhunt_hint2: "<gray><italic>Wähle Teams vor /start"
+      manhunt_hint3: "<gray><italic>Jäger 2 Minuten bewegungsunfähig"
+      manhunt_warning_teamrace: "<red><bold>⚠ Manhunt Race ist aktiv!"
+      manhunt_auto_disable: "<yellow><italic>Wird automatisch deaktiviert"
+      
+      custom_end_fight: "Jage das Ei - Eigener End-Kampf"
+      custom_end_fight_hint1: "<aqua><italic>Drachenei muss gesammelt werden"
+      custom_end_fight_hint2: "<gray><italic>Ei-Träger wird Boss mit 500 HP"
+      custom_end_fight_hint3: "<gold><italic>Alle anderen jagen den Ei-Träger"
+      
+      team_race_mode: "Manhunt Race - 2-10 Teams"
+      teamrace_hint1: "<aqua><italic>Nutze /team <TeamName> zum Beitreten"
+      teamrace_hint2: "<gray><italic>2-10 Teams rennen zum Enderdrachen"
+      teamrace_hint3: "<gold><italic>Kompasse zeigen zum nächsten Team"
+      teamrace_warning_manhunt: "<red><bold>⚠ Manhunt-Modus ist aktiv!"
+      teamrace_auto_disable: "<yellow><italic>Wird automatisch deaktiviert"
+      
+      chunk_items: "Zufälliges Item pro Chunk erhalten"
+      block_break_randomizer: "Block Break Randomizer"
+      block_break_randomizer_hint1: "<aqua><italic>Blöcke droppen zufällige Items"
+      block_break_randomizer_hint2: "<gray><italic>Gleich für alle Spieler pro Match"
+      friendly_fire_item: "Friendly Fire = OP Items"
+      friendly_fire_hint1: "<aqua><italic>Schaden wird im Team synchronisiert"
+      friendly_fire_hint2: "<gold><italic>Niedrigere HP = Bessere Items"
+
 # Version Checker
 version:
   prefix: "<aqua>[ChallengeUtil] "
@@ -793,5 +831,19 @@ version:
   version-info: "   <dark_gray>• <gray>Aktuell: <red><bold>{current}</bold></red>"
   version-latest: "   <dark_gray>• <gray>Neueste: <green><bold>{latest}</bold></green>"
   download-link: "   <dark_gray>• <gray>Download: <click:open_url:'{url}'><hover:show_text:'<yellow>Klicke um herunterzuladen<newline><gray>{url}'><aqua><bold>[Hier klicken]</bold></aqua></hover></click>"
+
+# Custom End Fight
+endfight:
+  chase-egg-title: "<light_purple><bold>JAGE DAS EI!"
+  chase-egg-subtitle: "<yellow>Sammle das Drachenei, um der Boss zu werden!"
+  boss-bar-title: "<light_purple><bold>🥚 {player}"
+  you-are-boss: "<light_purple><bold>⚡ DU BIST DER EI-TRÄGER!"
+  survive-instructions: "<yellow>  Überlebe mit 200 HP! Alle anderen jagen dich!"
+  defeat-boss: "<gold><bold>⚔ BESIEGE {player}!"
+  team-won: "<gold><bold>✓ TEAM {team} HAT GEWONNEN!"
+  new-holder: "<light_purple><bold>⚡ {player} ist jetzt der Ei-Träger!"
+  team-time-remaining: "<yellow>  Team {team} muss noch {time} überleben!"
+  cannot-drop-egg: "<red>✗ Du kannst das Drachenei nicht ablegen!"
+  cannot-place-egg: "<red>✗ Du kannst das Drachenei nicht platzieren!"
 
 

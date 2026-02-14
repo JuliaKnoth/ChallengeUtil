@@ -659,6 +659,11 @@ gui:
       manhunt_warning_teamrace: "<red><bold>⚠ Manhunt Race is active!"
       manhunt_auto_disable: "<yellow><italic>Will be automatically disabled"
       
+      custom_end_fight: "Chase the Egg - Custom End Fight"
+      custom_end_fight_hint1: "<aqua><italic>Dragon egg must be collected"
+      custom_end_fight_hint2: "<gray><italic>Egg holder becomes boss with 500 HP"
+      custom_end_fight_hint3: "<gold><italic>All others hunt the egg holder"
+      
       team_race_mode: "Manhunt Race - 2-10 Teams"
       teamrace_hint1: "<aqua><italic>Use /team <TeamName> to join"
       teamrace_hint2: "<gray><italic>2-10 teams race to the Ender Dragon"
@@ -701,6 +706,20 @@ version:
   version-info: "   <dark_gray>• <gray>Current: <red><bold>{current}</bold></red>"
   version-latest: "   <dark_gray>• <gray>Latest: <green><bold>{latest}</bold></green>"
   download-link: "   <dark_gray>• <gray>Download: <click:open_url:'{url}'><hover:show_text:'<yellow>Click to download<newline><gray>{url}'><aqua><bold>[Click here]</bold></aqua></hover></click>"
+
+# Custom End Fight
+endfight:
+  chase-egg-title: "<light_purple><bold>CHASE THE EGG!"
+  chase-egg-subtitle: "<yellow>Collect the Dragon Egg to become the boss!"
+  boss-bar-title: "<light_purple><bold>🥚 {player}"
+  you-are-boss: "<light_purple><bold>⚡ YOU ARE THE EGG HOLDER!"
+  survive-instructions: "<yellow>  Survive with 200 HP! All others are hunting you!"
+  defeat-boss: "<gold><bold>⚔ DEFEAT {player}!"
+  team-won: "<gold><bold>✓ TEAM {team} WON!"
+  new-holder: "<light_purple><bold>⚡ {player} is now the Egg Holder!"
+  team-time-remaining: "<yellow>  Team {team} needs to survive for {time} more!"
+  cannot-drop-egg: "<red>✗ You cannot drop the Dragon Egg!"
+  cannot-place-egg: "<red>✗ You cannot place the Dragon Egg!"
 
 
 

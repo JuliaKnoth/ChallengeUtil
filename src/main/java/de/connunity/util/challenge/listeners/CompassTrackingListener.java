@@ -52,7 +52,7 @@ public class CompassTrackingListener implements Listener {
             String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
             if (team != null && !team.isEmpty()) {
                 // Check if timer is running
-                if (!plugin.getTimerManager().isRunning()) {
+                if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
                     return;
                 }
                 
@@ -77,7 +77,7 @@ public class CompassTrackingListener implements Listener {
         }
         
         // Check if timer is running
-        if (!plugin.getTimerManager().isRunning()) {
+        if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
             return;
         }
         

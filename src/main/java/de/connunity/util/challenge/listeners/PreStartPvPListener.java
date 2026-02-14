@@ -23,9 +23,9 @@ public class PreStartPvPListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
-        // Only check if timer is not running
-        if (plugin.getTimerManager().isRunning()) {
-            return; // Timer is running, allow normal combat rules
+        // Only check if timer is not running or is paused
+        if (plugin.getTimerManager().isRunning() && !plugin.getTimerManager().isPaused()) {
+            return; // Timer is running and not paused, allow normal combat rules
         }
         
         // Check if both entities are players

@@ -8,8 +8,12 @@ import de.connunity.util.challenge.listeners.BlockBreakRandomizerListener;
 import de.connunity.util.challenge.listeners.CompassProtectionListener;
 import de.connunity.util.challenge.listeners.CompassTrackingListener;
 import de.connunity.util.challenge.listeners.ChunkItemChallengeListener;
+import de.connunity.util.challenge.listeners.DragonEggPickupListener;
+import de.connunity.util.challenge.listeners.EndFightDamageListener;
 import de.connunity.util.challenge.listeners.EnderDragonDeathListener;
+import de.connunity.util.challenge.listeners.EndPortalPreventionListener;
 import de.connunity.util.challenge.listeners.FriendlyFireItemListener;
+import de.connunity.util.challenge.listeners.GameStateRestrictionListener;
 import de.connunity.util.challenge.listeners.KeepRNGListener;
 import de.connunity.util.challenge.listeners.TimedRandomItemListener;
 import de.connunity.util.challenge.listeners.HostControlGUIListener;
@@ -28,6 +32,7 @@ import de.connunity.util.challenge.listeners.TeamRaceEnderDragonListener;
 import de.connunity.util.challenge.listeners.TeamRaceKillListener;
 import de.connunity.util.challenge.listeners.TeamRaceTeamListener;
 import de.connunity.util.challenge.listeners.WaitingRoomListener;
+import de.connunity.util.challenge.endfight.CustomEndFightManager;
 import de.connunity.util.challenge.manhunt.ManhuntManager;
 import de.connunity.util.challenge.teamrace.TeamRaceManager;
 import de.connunity.util.challenge.timer.TimerManager;
@@ -54,6 +59,7 @@ public class ChallengeUtil extends JavaPlugin {
     private LanguageManager languageManager;
     private ManhuntManager manhuntManager;
     private TeamRaceManager teamRaceManager;
+    private CustomEndFightManager customEndFightManager;
     private PlaceholderAPIExpansion placeholderAPIExpansion;
     private ChunkItemChallengeListener chunkItemChallengeListener;
     private FriendlyFireItemListener friendlyFireItemListener;
@@ -93,6 +99,9 @@ public class ChallengeUtil extends JavaPlugin {
 
         // Initialize team race manager
         teamRaceManager = new TeamRaceManager(this);
+
+        // Initialize custom end fight manager
+        customEndFightManager = new CustomEndFightManager(this);
 
         // Initialize PlaceholderAPI expansion
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -138,6 +147,9 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ManhuntChatListener(this), this);
         getServer().getPluginManager().registerEvents(new ManhuntMovementListener(this), this);
         getServer().getPluginManager().registerEvents(new EnderDragonDeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new DragonEggPickupListener(this, customEndFightManager), this);
+        getServer().getPluginManager().registerEvents(new EndFightDamageListener(this, customEndFightManager), this);
+        getServer().getPluginManager().registerEvents(new EndPortalPreventionListener(this, customEndFightManager), this);
         getServer().getPluginManager().registerEvents(new TeamRaceTeamListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceEnderDragonListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceKillListener(this), this);
@@ -145,6 +157,7 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CompassProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new WaitingRoomListener(this), this);
         getServer().getPluginManager().registerEvents(new PreStartPvPListener(this), this);
+        getServer().getPluginManager().registerEvents(new GameStateRestrictionListener(this), this);
         getServer().getPluginManager().registerEvents(chunkItemChallengeListener, this);
         getServer().getPluginManager().registerEvents(friendlyFireItemListener, this);
         getServer().getPluginManager().registerEvents(timedRandomItemListener, this);
@@ -217,6 +230,10 @@ public class ChallengeUtil extends JavaPlugin {
 
     public TeamRaceManager getTeamRaceManager() {
         return teamRaceManager;
+    }
+
+    public CustomEndFightManager getCustomEndFightManager() {
+        return customEndFightManager;
     }
 
     public LanguageManager getLanguageManager() {

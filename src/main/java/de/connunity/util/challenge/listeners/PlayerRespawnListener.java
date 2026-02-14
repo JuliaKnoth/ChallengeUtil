@@ -35,10 +35,11 @@ public class PlayerRespawnListener implements Listener {
         // Check if manhunt mode is enabled and timer is running
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         boolean isTimerRunning = plugin.getTimerManager().isRunning();
+        boolean isTimerPaused = plugin.getTimerManager().isPaused();
         boolean allowRespawn = plugin.getConfig().getBoolean("challenge.allow-respawn", true);
         
         // In manhunt mode, handle team-specific respawn logic
-        if (manhuntEnabled != null && manhuntEnabled && isTimerRunning) {
+        if (manhuntEnabled != null && manhuntEnabled && isTimerRunning && !isTimerPaused) {
             String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
             
             // Hunters: Use bed spawn if available, otherwise world spawn

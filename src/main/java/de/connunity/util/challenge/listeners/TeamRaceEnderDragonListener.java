@@ -31,8 +31,16 @@ public class TeamRaceEnderDragonListener implements Listener {
         // Check if team race mode is enabled and timer is running
         Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
         boolean isTimerRunning = plugin.getTimerManager().isRunning();
+        boolean isTimerPaused = plugin.getTimerManager().isPaused();
         
-        if (teamRaceEnabled == null || !teamRaceEnabled || !isTimerRunning) {
+        if (teamRaceEnabled == null || !teamRaceEnabled || !isTimerRunning || isTimerPaused) {
+            return;
+        }
+        
+        // Check if custom end fight is enabled - it takes priority
+        Boolean customEndFightEnabled = plugin.getDataManager().getSavedChallenge("custom_end_fight");
+        if (customEndFightEnabled != null && customEndFightEnabled) {
+            // Custom end fight will handle this, don't announce team race winner
             return;
         }
         
