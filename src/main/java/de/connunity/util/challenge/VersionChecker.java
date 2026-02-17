@@ -64,7 +64,7 @@ public class VersionChecker {
                     // Parse JSON response with extra validation
                     String responseStr = response.toString();
                     if (responseStr.isEmpty()) {
-                        plugin.getLogger().warning("Empty response from Modrinth API");
+                        plugin.logWarning("Empty response from Modrinth API");
                         return false;
                     }
                     
@@ -130,24 +130,24 @@ public class VersionChecker {
                     }
                 } else if (responseCode == 429) {
                     // Rate limited - not critical for 24/7 server
-                    plugin.getLogger().info("Version check rate limited by Modrinth API. Will try again later.");
+                    plugin.logDebug("Version check rate limited by Modrinth API. Will try again later.");
                 } else if (responseCode >= 500) {
                     // Server error - not critical for 24/7 server
-                    plugin.getLogger().info("Modrinth API temporarily unavailable (HTTP " + responseCode + ")");
+                    plugin.logDebug("Modrinth API temporarily unavailable (HTTP " + responseCode + ")");
                 } else {
-                    plugin.getLogger().warning("Failed to check for updates. Response code: " + responseCode);
+                    plugin.logWarning("Failed to check for updates. Response code: " + responseCode);
                 }
                 
                 connection.disconnect();
             } catch (java.net.SocketTimeoutException e) {
                 // Timeout is not critical for 24/7 server - just log at info level
-                plugin.getLogger().info("Version check timed out - this is normal and doesn't affect server operation");
+                plugin.logDebug("Version check timed out - this is normal and doesn't affect server operation");
             } catch (java.net.UnknownHostException e) {
                 // Network issue - not critical for 24/7 server
-                plugin.getLogger().info("Could not reach Modrinth API - check internet connection");
+                plugin.logDebug("Could not reach Modrinth API - check internet connection");
             } catch (Exception e) {
                 // General error - log but don't spam console
-                plugin.getLogger().log(Level.WARNING, "Could not check for updates: " + e.getMessage());
+                plugin.logWarning("Could not check for updates: " + e.getMessage());
             }
             
             return false;
@@ -165,11 +165,12 @@ public class VersionChecker {
                     try {
                         String downloadUrlFinal = downloadUrl != null ? downloadUrl : "https://modrinth.com/plugin/" + modrinthProjectId;
                         
-                        // Log to console (plain text)
-                        plugin.getLogger().info("=====================================");
-                        plugin.getLogger().info("⚠ Neue Version verfügbar! Aktuell: " + currentVersion + " → Neueste: " + latestVersion);
-                        plugin.getLogger().info("Download: " + downloadUrlFinal);
-                        plugin.getLogger().info("=====================================");
+                        // Log to console (plain text) - ALWAYS show update available messages
+                        plugin.logInfo("=====================================");
+                        plugin.logInfo("⚠ New Version available! ⚠");
+                        plugin.logInfo("Current: " + currentVersion + " → Latest: " + latestVersion);
+                        plugin.logInfo("Download: " + downloadUrlFinal);
+                        plugin.logInfo("=====================================");
                         
                         // Use language manager with placeholders
                         Map<String, String> placeholders = new HashMap<>();
@@ -194,13 +195,13 @@ public class VersionChecker {
                             }
                         }
                     } catch (Exception e) {
-                        plugin.getLogger().log(Level.WARNING, "Error notifying about update: " + e.getMessage());
+                        plugin.logWarning("Error notifying about update: " + e.getMessage());
                     }
                 });
             }
         }).exceptionally(throwable -> {
             // Catch any exceptions from the async task to prevent thread issues on 24/7 server
-            plugin.getLogger().log(Level.WARNING, "Error during version check: " + throwable.getMessage());
+            plugin.logWarning("Error during version check: " + throwable.getMessage());
             return null;
         });
     }

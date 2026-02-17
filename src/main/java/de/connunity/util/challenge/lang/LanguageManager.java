@@ -39,7 +39,7 @@ public class LanguageManager {
         // Load English
         loadLanguage("en");
         
-        plugin.getLogger().info("Loaded " + languages.size() + " language(s). Current: " + currentLanguage);
+        plugin.logInfo("Loaded " + languages.size() + " language(s). Current: " + currentLanguage);
     }
     
     /**
@@ -63,20 +63,20 @@ public class LanguageManager {
         // Save default file from resources if it doesn't exist or needs update
         if (!langFile.exists()) {
             plugin.saveResource("lang/" + lang + ".yml", false);
-            plugin.getLogger().info("Created new language file: lang/" + lang + ".yml");
+            plugin.logDebug("Created new language file: lang/" + lang + ".yml");
         } else if (needsUpdate) {
             // Backup old file
             File backupFile = new File(plugin.getDataFolder(), "lang/" + lang + ".yml.bak");
             try {
                 Files.copy(langFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                plugin.getLogger().info("Backed up old language file to: lang/" + lang + ".yml.bak");
+                plugin.logDebug("Backed up old language file to: lang/" + lang + ".yml.bak");
             } catch (Exception e) {
-                plugin.getLogger().warning("Could not backup language file: " + e.getMessage());
+                plugin.logWarning("Could not backup language file: " + e.getMessage());
             }
             
             // Force update the file with new version
             plugin.saveResource("lang/" + lang + ".yml", true);
-            plugin.getLogger().info("Updated language file with new keys: lang/" + lang + ".yml");
+            plugin.logDebug("Updated language file with new keys: lang/" + lang + ".yml");
         }
         
         // Load the language file
@@ -117,14 +117,14 @@ public class LanguageManager {
             // Check if bundled config has keys that existing config doesn't have
             for (String key : bundledKeys) {
                 if (!existingKeys.contains(key)) {
-                    plugin.getLogger().info("Found new language key in bundled file: " + key);
+                    plugin.logDebug("Found new language key in bundled file: " + key);
                     return true;
                 }
             }
             
             return false;
         } catch (Exception e) {
-            plugin.getLogger().warning("Error checking for new language keys: " + e.getMessage());
+            plugin.logWarning("Error checking for new language keys: " + e.getMessage());
             return false;
         }
     }
@@ -197,9 +197,9 @@ public class LanguageManager {
             this.currentLanguage = lang;
             plugin.getConfig().set("language", lang);
             plugin.saveConfig();
-            plugin.getLogger().info("Language changed to: " + lang);
+            plugin.logInfo("Language changed to: " + lang);
         } else {
-            plugin.getLogger().warning("Language '" + lang + "' not found!");
+            plugin.logWarning("Language '" + lang + "' not found!");
         }
     }
     

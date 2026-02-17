@@ -139,13 +139,13 @@ public class EnderDragonDeathListener implements Listener {
                 Location eggLocation = findDragonEgg(dragonLocation);
                 
                 if (eggLocation != null) {
-                    plugin.getLogger().info("Found dragon egg at: " + eggLocation);
+                    plugin.logDebug("Found dragon egg at: " + eggLocation);
                     // Start continuous glow effect
                     startEggGlowEffect(eggLocation);
                     this.cancel();
                 } else if (attempts >= maxAttempts) {
                     // Give up after max attempts
-                    plugin.getLogger().warning("Could not find dragon egg to add glow effect after " + attempts + " attempts!");
+                    plugin.logWarning("Could not find dragon egg to add glow effect after " + attempts + " attempts!");
                     this.cancel();
                 }
             }

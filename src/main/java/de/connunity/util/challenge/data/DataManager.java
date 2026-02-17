@@ -1,5 +1,6 @@
 package de.connunity.util.challenge.data;
 
+import de.connunity.util.challenge.ChallengeUtil;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -31,7 +32,7 @@ public class DataManager {
             try {
                 dataFile.createNewFile();
             } catch (IOException e) {
-                plugin.getLogger().severe("Failed to create data.yml: " + e.getMessage());
+                ((ChallengeUtil) plugin).logWarning("Failed to create data.yml: " + e.getMessage());
             }
         }
         
@@ -46,7 +47,7 @@ public class DataManager {
      */
     public void reloadData() {
         dataConfig = YamlConfiguration.loadConfiguration(dataFile);
-        plugin.getLogger().info("Data configuration reloaded from disk");
+        ((ChallengeUtil) plugin).logDebug("Data configuration reloaded from disk");
     }
     
     /**
@@ -58,7 +59,7 @@ public class DataManager {
             return;
         }
         
-        plugin.getLogger().info("Initializing default gamerules in data.yml...");
+        ((ChallengeUtil) plugin).logDebug("Initializing default gamerules in data.yml...");
         
         // Get speedrun world gamerules from config
         org.bukkit.configuration.ConfigurationSection speedrunGamerules = 
@@ -73,7 +74,7 @@ public class DataManager {
                     saveGamerule(key, (Integer) value);
                 }
             }
-            plugin.getLogger().info("Initialized " + speedrunGamerules.getKeys(false).size() + " default gamerules");
+            ((ChallengeUtil) plugin).logDebug("Initialized " + speedrunGamerules.getKeys(false).size() + " default gamerules");
         }
     }
     
@@ -84,7 +85,7 @@ public class DataManager {
         try {
             dataConfig.save(dataFile);
         } catch (IOException e) {
-            plugin.getLogger().severe("Failed to save data.yml: " + e.getMessage());
+            ((ChallengeUtil) plugin).logWarning("Failed to save data.yml: " + e.getMessage());
         }
     }
     
@@ -466,6 +467,6 @@ public class DataManager {
         // Reload from disk to ensure in-memory config matches disk state
         reloadData();
         
-        plugin.getLogger().info("All speedrun data cleared and reloaded (nether/end milestones reset)");
+        ((ChallengeUtil) plugin).logDebug("All speedrun data cleared and reloaded (nether/end milestones reset)");
     }
 }

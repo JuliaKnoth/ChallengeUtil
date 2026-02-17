@@ -88,7 +88,7 @@ public class TimedRandomItemListener implements Listener {
                     Material material = Material.valueOf(itemName.toUpperCase());
                     excludedItems.add(material);
                 } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid excluded item in config: " + itemName);
+                    plugin.logWarning("Invalid excluded item in config: " + itemName);
                 }
             }
         }
@@ -349,7 +349,7 @@ public class TimedRandomItemListener implements Listener {
             checkAndGiveItems();
         }, 20L, 20L); // Check every second (20 ticks)
         
-        plugin.getLogger().info("Timed Random Item Challenge started!");
+        plugin.logInfo("Timed Random Item Challenge started!");
     }
     
     /**
@@ -368,7 +368,7 @@ public class TimedRandomItemListener implements Listener {
             totalElapsedTime += (pauseStartTime - challengeStartTime);
         }
         
-        plugin.getLogger().info("Timed Random Item Challenge paused! Elapsed time: " + (totalElapsedTime / 1000) + "s");
+        plugin.logInfo("Timed Random Item Challenge paused! Elapsed time: " + (totalElapsedTime / 1000) + "s");
     }
     
     /**
@@ -385,7 +385,7 @@ public class TimedRandomItemListener implements Listener {
         challengeStartTime = System.currentTimeMillis();
         pauseStartTime = 0;
         
-        plugin.getLogger().info("Timed Random Item Challenge resumed! Total elapsed time: " + (totalElapsedTime / 1000) + "s");
+        plugin.logInfo("Timed Random Item Challenge resumed! Total elapsed time: " + (totalElapsedTime / 1000) + "s");
     }
     
     /**
@@ -400,7 +400,7 @@ public class TimedRandomItemListener implements Listener {
         totalElapsedTime = 0;
         isPaused = false;
         lastItemGiveSecond = -1;
-        plugin.getLogger().info("Timed Random Item Challenge stopped!");
+        plugin.logInfo("Timed Random Item Challenge stopped!");
     }
     
     /**

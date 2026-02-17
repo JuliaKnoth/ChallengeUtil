@@ -1,5 +1,6 @@
 package de.connunity.util.challenge.timer;
 
+import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.ColorUtil;
 import de.connunity.util.challenge.data.DataManager;
 import net.kyori.adventure.text.Component;
@@ -48,16 +49,16 @@ public class TimerManager {
                 paused = true;
                 startBlinking();
                 updateActionBar();
-                plugin.getLogger().info("Restored paused timer: " + formatTime(totalSeconds));
+                ((ChallengeUtil) plugin).logDebug("Restored paused timer: " + formatTime(totalSeconds));
             } else {
                 // Timer was running when server stopped - resume it
                 start();
-                plugin.getLogger().info("Restored running timer: " + formatTime(totalSeconds));
+                ((ChallengeUtil) plugin).logDebug("Restored running timer: " + formatTime(totalSeconds));
             }
         } else if (totalSeconds > 0) {
             // Timer was stopped but had time - just display it
             updateActionBar();
-            plugin.getLogger().info("Restored stopped timer: " + formatTime(totalSeconds));
+            ((ChallengeUtil) plugin).logDebug("Restored stopped timer: " + formatTime(totalSeconds));
         }
     }
     

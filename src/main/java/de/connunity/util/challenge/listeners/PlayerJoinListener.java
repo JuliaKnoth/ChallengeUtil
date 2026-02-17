@@ -61,13 +61,13 @@ public class PlayerJoinListener implements Listener {
                     teleportToSpeedrunSpawn(player);
                 } else {
                     // Regular rejoin - player spawns at their logout location (Minecraft default)
-                    plugin.getLogger().info(player.getName() + " rejoined at their logout location");
+                    plugin.logDebug(player.getName() + " rejoined at their logout location");
                 }
                 
             } else {
                 // Player is in some other world - send them to waiting room for safety
-                plugin.getLogger().warning("Player " + player.getName() + " joined in unexpected world: " + currentWorldName);
-                plugin.getLogger().warning("Sending to waiting room for safety...");
+                plugin.logWarning("Player " + player.getName() + " joined in unexpected world: " + currentWorldName);
+                plugin.logWarning("Sending to waiting room for safety...");
                 teleportToWaitingRoom(player);
             }
             
@@ -93,7 +93,7 @@ public class PlayerJoinListener implements Listener {
         World waitingRoom = Bukkit.getWorld(waitingRoomName);
         
         if (waitingRoom == null) {
-            plugin.getLogger().severe("Waiting room world '" + waitingRoomName + "' not found!");
+            plugin.logWarning("Waiting room world '" + waitingRoomName + "' not found!");
             return;
         }
         
@@ -111,7 +111,7 @@ public class PlayerJoinListener implements Listener {
         // Set player to adventure mode in waiting room
         player.setGameMode(GameMode.ADVENTURE);
         
-        plugin.getLogger().info("Teleported " + player.getName() + " to waiting room spawn");
+        plugin.logDebug("Teleported " + player.getName() + " to waiting room spawn");
     }
     
     /**
@@ -122,8 +122,8 @@ public class PlayerJoinListener implements Listener {
         World speedrunWorld = Bukkit.getWorld(speedrunWorldName);
         
         if (speedrunWorld == null) {
-            plugin.getLogger().warning("Speedrun world '" + speedrunWorldName + "' not found!");
-            plugin.getLogger().warning("Sending player to waiting room instead...");
+            plugin.logWarning("Speedrun world '" + speedrunWorldName + "' not found!");
+            plugin.logWarning("Sending player to waiting room instead...");
             teleportToWaitingRoom(player);
             return;
         }
@@ -131,7 +131,7 @@ public class PlayerJoinListener implements Listener {
         // Use the world's spawn location (set by FullResetCommand after chunks load)
         Location spawn = speedrunWorld.getSpawnLocation();
         player.teleport(spawn);
-        plugin.getLogger().info("Teleported " + player.getName() + " to speedrun world spawn at Y=" + spawn.getBlockY());
+        plugin.logDebug("Teleported " + player.getName() + " to speedrun world spawn at Y=" + spawn.getBlockY());
     }
     
     /**
@@ -186,10 +186,10 @@ public class PlayerJoinListener implements Listener {
                     });
                 }
             });
-            plugin.getLogger().info("Reset advancements for player: " + player.getName());
+            plugin.logDebug("Reset advancements for player: " + player.getName());
         });
         
-        plugin.getLogger().info("Reset state for player: " + player.getName());
+        plugin.logDebug("Reset state for player: " + player.getName());
     }
     
     /**
@@ -215,7 +215,7 @@ public class PlayerJoinListener implements Listener {
         
         // Give the hunter a compass
         plugin.getManhuntManager().giveCompassToHunter(player);
-        plugin.getLogger().info("Gave compass to rejoining hunter: " + player.getName());
+        plugin.logDebug("Gave compass to rejoining hunter: " + player.getName());
     }
     
     /**
@@ -268,18 +268,18 @@ public class PlayerJoinListener implements Listener {
                                 player.sendMessage(downloadLink);
                             } catch (Exception e) {
                                 // Silently catch to avoid spam in 24/7 server logs
-                                plugin.getLogger().fine("Could not notify player about update: " + e.getMessage());
+                                plugin.logDebug("Could not notify player about update: " + e.getMessage());
                             }
                         });
                     }
                 }).exceptionally(throwable -> {
                     // Silently handle errors to avoid spam in 24/7 server logs
-                    plugin.getLogger().fine("Version check failed for player notification: " + throwable.getMessage());
+                    plugin.logDebug("Version check failed for player notification: " + throwable.getMessage());
                     return null;
                 });
             } catch (Exception e) {
                 // Catch any exceptions to prevent issues with player login
-                plugin.getLogger().fine("Error during version check notification: " + e.getMessage());
+                plugin.logDebug("Error during version check notification: " + e.getMessage());
             }
         });
     }

@@ -6,6 +6,14 @@
 # Language files are located in plugins/ChallengeUtil/lang/
 language: en
 
+# Debug settings
+# Control how much debug information is displayed in the server console
+debug:
+  # When enabled (default: true), only important messages are logged
+  # When disabled (false), all debug messages including detailed state changes are shown
+  # Important messages are always shown: seed, world creation status, updates, spawn finding, etc.
+  reduced-debug-info: true
+
 # Update checker settings
 # The plugin will check for new versions on Modrinth
 # This is designed to work safely on 24/7 servers

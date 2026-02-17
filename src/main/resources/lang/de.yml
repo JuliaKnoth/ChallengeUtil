@@ -806,7 +806,7 @@ gui:
       
       custom_end_fight: "Jage das Ei - Eigener End-Kampf"
       custom_end_fight_hint1: "<aqua><italic>Drachenei muss gesammelt werden"
-      custom_end_fight_hint2: "<gray><italic>Ei-Träger wird Boss mit 500 HP"
+      custom_end_fight_hint2: "<gray><italic>Ei-Träger wird Boss mit 40 HP"
       custom_end_fight_hint3: "<gold><italic>Alle anderen jagen den Ei-Träger"
       
       team_race_mode: "Manhunt Race - 2-10 Teams"
@@ -838,12 +838,25 @@ endfight:
   chase-egg-subtitle: "<yellow>Sammle das Drachenei, um der Boss zu werden!"
   boss-bar-title: "<light_purple><bold>🥚 {player}"
   you-are-boss: "<light_purple><bold>⚡ DU BIST DER EI-TRÄGER!"
-  survive-instructions: "<yellow>  Überlebe mit 200 HP! Alle anderen jagen dich!"
+  survive-instructions: "<yellow>  Überlebe mit 40 HP! Alle anderen jagen dich!"
   defeat-boss: "<gold><bold>⚔ BESIEGE {player}!"
   team-won: "<gold><bold>✓ TEAM {team} HAT GEWONNEN!"
+  team-escaped: "<yellow>Ihr seit mit dem Drachenei in die Oberwelt entkommen!"
   new-holder: "<light_purple><bold>⚡ {player} ist jetzt der Ei-Träger!"
   team-time-remaining: "<yellow>  Team {team} muss noch {time} überleben!"
+  egg-respawned: "<light_purple><bold>🥚 Das Drachenei wurde neu gespawnt"
   cannot-drop-egg: "<red>✗ Du kannst das Drachenei nicht ablegen!"
   cannot-place-egg: "<red>✗ Du kannst das Drachenei nicht platzieren!"
+  
+  # Portal unlock messages
+  portal-unlocked-title: "<yellow><bold>⏱ ZEIT IST UM!"
+  portal-unlocked-subtitle: "<green>Das Endportal wurde freigeschaltet!"
+  portal-team-can-escape: "<gray>  <aqua>{team}<gray> kann jetzt in die Oberwelt entkommen, um zu gewinnen!"
+  
+  # Objectives
+  objective-extract-egg: "<gold><bold>📍 DEIN ZIEL: <yellow>Bringe das Ei aus dem End!"
+  objective-survive-time: "<gold><bold>📍 DEIN ZIEL: <yellow>Überlebe <gold>{time}<yellow>, um das Portal freizuschalten!"
+  objective-team-must-extract: "<aqua>  {team}<yellow> muss das Ei extrahieren, um zu gewinnen!"
+  objective-time-remaining: "<yellow>  Verbleibende Zeit: <gold>{time}"
 
 

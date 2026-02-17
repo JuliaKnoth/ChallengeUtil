@@ -80,8 +80,8 @@ public class FullResetCommand implements CommandExecutor {
         // Get waiting room world (must exist!)
         World waitingRoom = Bukkit.getWorld(waitingRoomName);
     if (waitingRoom == null) {
-        plugin.getLogger().severe("FATAL: Waiting room '" + waitingRoomName + "' does not exist!");
-        plugin.getLogger().severe("Please create the waiting room world first. See setup guide.");
+        plugin.logWarning("FATAL: Waiting room '" + waitingRoomName + "' does not exist!");
+        plugin.logWarning("Please create the waiting room world first. See setup guide.");
         Bukkit.broadcast(Component.text("Reset fehlgeschlagen! Warteraum nicht gefunden. Bitte Admin kontaktieren.", 
             NamedTextColor.RED));
             plugin.setResetInProgress(false);
@@ -106,18 +106,18 @@ public class FullResetCommand implements CommandExecutor {
         for (Player player : Bukkit.getOnlinePlayers()) {
             resetPlayer(player);
         }
-        plugin.getLogger().info("Reset all players for full reset (" + Bukkit.getOnlinePlayers().size() + " players)");
+        plugin.logDebug("Reset all players for full reset (" + Bukkit.getOnlinePlayers().size() + " players)");
         
         // Log
-        plugin.getLogger().info("═══════════════════════════════════");
-        plugin.getLogger().info("HOLODECK RESET initiated by " + initiator);
-        plugin.getLogger().info("New seed: " + newSeed);
-        plugin.getLogger().info("═══════════════════════════════════");
+        plugin.logInfo("═══════════════════════════════════");
+        plugin.logInfo("HOLODECK RESET initiated by " + initiator);
+        plugin.logInfo("New seed: " + newSeed);
+        plugin.logInfo("═══════════════════════════════════");
         
         // PHASE 1: Teleport all players to waiting room (on this server)
         List<Player> playersToTeleport = new ArrayList<>(Bukkit.getOnlinePlayers());
         
-        plugin.getLogger().info("Teleporting " + playersToTeleport.size() + " players to waiting room");
+        plugin.logDebug("Teleporting " + playersToTeleport.size() + " players to waiting room");
         
         Location waitingRoomSpawn = getWaitingRoomSpawn(waitingRoom);
         
@@ -133,7 +133,7 @@ public class FullResetCommand implements CommandExecutor {
             player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         }
         
-        plugin.getLogger().info("Players teleported to waiting room. Starting world reset...");
+        plugin.logDebug("Players teleported to waiting room. Starting world reset...");
         
         // PHASE 2: Small delay, then delete and regenerate
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -154,8 +154,8 @@ public class FullResetCommand implements CommandExecutor {
             
             player.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to send " + player.getName() + " to lobby: " + e.getMessage());
-            plugin.getLogger().warning("Player will be teleported to waiting room instead.");
+            plugin.logWarning("Failed to send " + player.getName() + " to lobby: " + e.getMessage());
+            plugin.logWarning("Player will be teleported to waiting room instead.");
             
             // Fallback: teleport to waiting room
             World waitingRoom = Bukkit.getWorld(plugin.getConfig().getString("world.waiting-room", "waiting_room"));
@@ -190,7 +190,7 @@ public class FullResetCommand implements CommandExecutor {
      * Delete and regenerate the speedrun world ASYNCHRONOUSLY
      */
     private void deleteAndRegenerateWorld(String worldName, long seed, List<Player> players) {
-        plugin.getLogger().info("Starting world deletion for: " + worldName);
+        plugin.logDebug("Starting world deletion for: " + worldName);
         
         // CRITICAL: Unload ALL three dimensions (Overworld, Nether, End) before deletion
         // Otherwise file locks on Windows will prevent deletion!
@@ -200,24 +200,24 @@ public class FullResetCommand implements CommandExecutor {
         
         // Unload the Overworld
         if (speedrunWorld != null) {
-            plugin.getLogger().info("Unloading world: " + worldName);
+            plugin.logDebug("Unloading world: " + worldName);
             Bukkit.unloadWorld(speedrunWorld, false); // Don't save - we're deleting it
         }
         
         // Unload the Nether
         if (netherWorld != null) {
-            plugin.getLogger().info("Unloading Nether: " + worldName + "_nether");
+            plugin.logDebug("Unloading Nether: " + worldName + "_nether");
             Bukkit.unloadWorld(netherWorld, false); // Don't save - we're deleting it
         }
         
         // Unload the End
         if (endWorld != null) {
-            plugin.getLogger().info("Unloading End: " + worldName + "_the_end");
+            plugin.logDebug("Unloading End: " + worldName + "_the_end");
             Bukkit.unloadWorld(endWorld, false); // Don't save - we're deleting it
         }
         
         // Small delay to ensure worlds are fully unloaded before deletion (especially on Windows)
-        plugin.getLogger().info("Waiting for worlds to fully unload...");
+        plugin.logDebug("Waiting for worlds to fully unload...");
         try {
             Thread.sleep(500); // 500ms delay to ensure file locks are released
         } catch (InterruptedException e) {
@@ -233,10 +233,10 @@ public class FullResetCommand implements CommandExecutor {
                 deleteWorldFolder(new File(serverRoot, worldName + "_nether"));
                 deleteWorldFolder(new File(serverRoot, worldName + "_the_end"));
                 
-                plugin.getLogger().info("World folders deleted successfully.");
+                plugin.logInfo("World folders deleted successfully.");
                 
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to delete world folders: " + e.getMessage());
+                plugin.logWarning("Failed to delete world folders: " + e.getMessage());
                 e.printStackTrace();
                 
                 // Reset flag on error
@@ -253,7 +253,7 @@ public class FullResetCommand implements CommandExecutor {
                 try {
                     regenerateWorld(worldName, seed, players);
                 } catch (Exception e) {
-            plugin.getLogger().severe("Failed to regenerate world: " + e.getMessage());
+            plugin.logWarning("Failed to regenerate world: " + e.getMessage());
             e.printStackTrace();
             plugin.setResetInProgress(false);
             Bukkit.broadcast(Component.text("Welt-Generierung fehlgeschlagen! Prüfe die Konsole.", 
@@ -267,7 +267,7 @@ public class FullResetCommand implements CommandExecutor {
      * Regenerate the speedrun world with new seed
      */
     private void regenerateWorld(String worldName, long seed, List<Player> players) {
-        plugin.getLogger().info("Regenerating world: " + worldName + " with seed: " + seed);
+        plugin.logInfo("Regenerating world: " + worldName + " with seed: " + seed);
         
         try {
             // Create world creator
@@ -284,20 +284,20 @@ public class FullResetCommand implements CommandExecutor {
                     plugin.getConfig().getBoolean("world.generation.generate-structures", true);
             creator.generateStructures(generateStructures);
             
-            plugin.getLogger().info("Creating world (structures: " + generateStructures + ")...");
+            plugin.logDebug("Creating world (structures: " + generateStructures + ")...");
             
             // Create the world (Overworld)
             // NOTE: To reduce freezing, set "initial-world-border-size=0" in server.properties!
             World newWorld = creator.createWorld();
             
                 if (newWorld == null) {
-                plugin.getLogger().severe("FAILED to create world!");
+                plugin.logWarning("FAILED to create world!");
                 Bukkit.broadcast(Component.text("Welt-Erstellung fehlgeschlagen! Bitte Admin kontaktieren.", NamedTextColor.RED));
                 plugin.setResetInProgress(false);
                 return;
             }
             
-            plugin.getLogger().info("Overworld created successfully!");
+            plugin.logInfo("Overworld created successfully!");
             
             // Create the Nether dimension for this world
             WorldCreator netherCreator = new WorldCreator(worldName + "_nether");
@@ -308,9 +308,9 @@ public class FullResetCommand implements CommandExecutor {
             
             if (netherWorld != null) {
                 netherWorld.setKeepSpawnInMemory(false);
-                plugin.getLogger().info("Nether dimension created successfully!");
+                plugin.logInfo("Nether dimension created successfully!");
             } else {
-                plugin.getLogger().warning("Failed to create Nether dimension!");
+                plugin.logWarning("Failed to create Nether dimension!");
             }
             
             // Create the End dimension for this world
@@ -322,9 +322,9 @@ public class FullResetCommand implements CommandExecutor {
             
             if (endWorld != null) {
                 endWorld.setKeepSpawnInMemory(false);
-                plugin.getLogger().info("End dimension created successfully!");
+                plugin.logInfo("End dimension created successfully!");
             } else {
-                plugin.getLogger().warning("Failed to create End dimension!");
+                plugin.logWarning("Failed to create End dimension!");
             }
             
             // IMPORTANT: Disable spawn chunk loading to prevent server lag
@@ -332,7 +332,7 @@ public class FullResetCommand implements CommandExecutor {
             
             // Set time to day
             newWorld.setTime(1000L); // Morning time (1000 ticks)
-            plugin.getLogger().info("Set world time to day (1000 ticks)");
+            plugin.logDebug("Set world time to day (1000 ticks)");
             
             // Apply difficulty setting from persistent data (if available)
             String savedDifficulty = plugin.getDataManager().getSavedDifficulty();
@@ -350,9 +350,9 @@ public class FullResetCommand implements CommandExecutor {
                     endWorld.setDifficulty(difficulty);
                 }
                 
-                plugin.getLogger().info("Set world difficulty to: " + difficulty + " (from persistent settings)");
+                plugin.logDebug("Set world difficulty to: " + difficulty + " (from persistent settings)");
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid difficulty: " + difficultyStr + ", using NORMAL");
+                plugin.logWarning("Invalid difficulty: " + difficultyStr + ", using NORMAL");
                 newWorld.setDifficulty(Difficulty.NORMAL);
                 if (netherWorld != null) netherWorld.setDifficulty(Difficulty.NORMAL);
                 if (endWorld != null) endWorld.setDifficulty(Difficulty.NORMAL);
@@ -376,7 +376,7 @@ public class FullResetCommand implements CommandExecutor {
             
             // CRITICAL: Re-apply gamerules AFTER spawn chunks are loaded
             // This ensures they don't get reset by chunk loading
-            plugin.getLogger().info("Re-applying gamerules after spawn chunk loading...");
+            plugin.logDebug("Re-applying gamerules after spawn chunk loading...");
             plugin.applySavedGamerulesToWorld(newWorld);
             if (netherWorld != null) {
                 plugin.applySavedGamerulesToWorld(netherWorld);
@@ -386,7 +386,7 @@ public class FullResetCommand implements CommandExecutor {
             }
             
         } catch (Exception e) {
-            plugin.getLogger().severe("Error during world regeneration: " + e.getMessage());
+            plugin.logWarning("Error during world regeneration: " + e.getMessage());
             e.printStackTrace();
             Bukkit.broadcast(Component.text("World regeneration failed! Contact admin.", NamedTextColor.RED));
             plugin.setResetInProgress(false);
@@ -397,7 +397,7 @@ public class FullResetCommand implements CommandExecutor {
      * Load spawn chunks asynchronously and set proper spawn location
      */
     private void loadSpawnChunksAndSetSpawn(World world, List<Player> players) {
-        plugin.getLogger().info("Pre-generating spawn area to prevent loading lag...");
+        plugin.logDebug("Pre-generating spawn area to prevent loading lag...");
         
         // Get base spawn location from config
         Location baseSpawn = getSpeedrunSpawn(world);
@@ -409,7 +409,7 @@ public class FullResetCommand implements CommandExecutor {
         final int totalChunks = (radius * 2 + 1) * (radius * 2 + 1); // 121 chunks
         final int[] loadedChunks = {0};
         
-        plugin.getLogger().info("Pre-generating " + totalChunks + " chunks (11x11 grid)...");
+        plugin.logDebug("Pre-generating " + totalChunks + " chunks (11x11 grid)...");
         
         // Load chunks ASYNCHRONOUSLY
         for (int x = -radius; x <= radius; x++) {
@@ -425,22 +425,22 @@ public class FullResetCommand implements CommandExecutor {
                     loadedChunks[0]++;
                     
                     if (loadedChunks[0] % 25 == 0 || loadedChunks[0] == totalChunks) {
-                        plugin.getLogger().info("Pre-generated " + loadedChunks[0] + "/" + totalChunks + " chunks...");
+                        plugin.logDebug("Pre-generated " + loadedChunks[0] + "/" + totalChunks + " chunks...");
                     }
                     
                     // When all chunks are loaded, set spawn and bring players back
                     if (loadedChunks[0] == totalChunks) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            plugin.getLogger().info("All spawn chunks loaded! Finding safe spawn point...");
+                            plugin.logDebug("All spawn chunks loaded! Finding safe spawn point...");
                             
                             // Find safe spawn on solid ground
                             Location safeSpawn = findSafeSurfaceLocation(baseSpawn);
-                            plugin.getLogger().info("Safe spawn found at X=" + safeSpawn.getBlockX() + 
+                            plugin.logInfo("Safe spawn found at X=" + safeSpawn.getBlockX() + 
                                     " Y=" + safeSpawn.getBlockY() + " Z=" + safeSpawn.getBlockZ());
                             
                             // Set world spawn to the safe location
                             world.setSpawnLocation(safeSpawn);
-                            plugin.getLogger().info("World spawn point set!");
+                            plugin.logDebug("World spawn point set!");
                             
                             // Notify players that the world is ready (but don't teleport them back)
                             notifyPlayersResetComplete(players);
@@ -455,7 +455,7 @@ public class FullResetCommand implements CommandExecutor {
      * Notify players that the reset is complete (but keep them in waiting room)
      */
     private void notifyPlayersResetComplete(List<Player> players) {
-        plugin.getLogger().info("World reset complete! Notifying players in waiting room...");
+        plugin.logDebug("World reset complete! Notifying players in waiting room...");
         
         // Wait a moment for everything to stabilize
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -466,9 +466,9 @@ public class FullResetCommand implements CommandExecutor {
             Bukkit.broadcast(Component.text("Ihr könnt eine neue Runde starten!", NamedTextColor.AQUA));
             Bukkit.broadcast(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
             
-            plugin.getLogger().info("═══════════════════════════════════");
-            plugin.getLogger().info("RESET COMPLETE! Players can now use /start or /join");
-            plugin.getLogger().info("═══════════════════════════════════");
+            plugin.logInfo("═══════════════════════════════════");
+            plugin.logInfo("RESET COMPLETE! Players can now use /start or /join");
+            plugin.logInfo("═══════════════════════════════════");
             
             // Reset complete - clear the flag
             plugin.setResetInProgress(false);
@@ -481,7 +481,7 @@ public class FullResetCommand implements CommandExecutor {
      */
     @Deprecated
     private void bringPlayersBackFromLobby(List<String> playerNames) {
-        plugin.getLogger().info("World reset complete! Bringing players back from lobby...");
+        plugin.logDebug("World reset complete! Bringing players back from lobby...");
         
         String thisServerName = plugin.getConfig().getString("proxy.this-server-name", "speedrun");
         
@@ -493,10 +493,10 @@ public class FullResetCommand implements CommandExecutor {
                 sendPlayerToServer(playerName, thisServerName);
             }
             
-            plugin.getLogger().info("Sent connection requests for " + playerNames.size() + " players.");
-            plugin.getLogger().info("═══════════════════════════════════");
-            plugin.getLogger().info("RESET COMPLETE! Players can now rejoin.");
-            plugin.getLogger().info("═══════════════════════════════════");
+            plugin.logDebug("Sent connection requests for " + playerNames.size() + " players.");
+            plugin.logInfo("═══════════════════════════════════");
+            plugin.logInfo("RESET COMPLETE! Players can now rejoin.");
+            plugin.logInfo("═══════════════════════════════════");
             
             // Reset complete - clear the flag
             plugin.setResetInProgress(false);
@@ -522,10 +522,10 @@ public class FullResetCommand implements CommandExecutor {
                 Player sender = Bukkit.getOnlinePlayers().iterator().next();
                 sender.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
             } else {
-                plugin.getLogger().warning("No online players to send proxy message. Players must rejoin manually.");
+                plugin.logWarning("No online players to send proxy message. Players must rejoin manually.");
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to send connection request for " + playerName + ": " + e.getMessage());
+            plugin.logWarning("Failed to send connection request for " + playerName + ": " + e.getMessage());
         }
     }
     
@@ -533,7 +533,7 @@ public class FullResetCommand implements CommandExecutor {
      * Countdown before world deletion (REMOVED - now sends to lobby instead)
      */
     private void teleportPlayersToSpeedrunWorld(World world, List<Player> players) {
-        plugin.getLogger().info("Pre-loading chunks ASYNCHRONOUSLY around spawn...");
+        plugin.logDebug("Pre-loading chunks ASYNCHRONOUSLY around spawn...");
         
         // Get base spawn location
         Location spawnLocation = getSpeedrunSpawn(world);
@@ -555,7 +555,7 @@ public class FullResetCommand implements CommandExecutor {
                     
                     // Log progress every 10 chunks
                     if (loadedChunks[0] % 10 == 0 || loadedChunks[0] == totalChunks) {
-                        plugin.getLogger().info("Loaded " + loadedChunks[0] + "/" + totalChunks + " chunks...");
+                        plugin.logDebug("Loaded " + loadedChunks[0] + "/" + totalChunks + " chunks...");
                     }
                     
                     // When all chunks are loaded, proceed to teleportation
@@ -571,16 +571,16 @@ public class FullResetCommand implements CommandExecutor {
      * Called when all chunks are loaded - proceeds with player teleportation
      */
     private void onAllChunksLoaded(World world, Location spawnLocation, List<Player> players) {
-        plugin.getLogger().info("All 49 chunks loaded! Finding safe solid ground...");
+        plugin.logDebug("All 49 chunks loaded! Finding safe solid ground...");
         
         // Find actual safe spawn location on SOLID GROUND (not water!)
         Location safeSpawn = findSafeSurfaceLocation(spawnLocation);
-        plugin.getLogger().info("Safe spawn found at X=" + safeSpawn.getBlockX() + " Y=" + safeSpawn.getBlockY() + " Z=" + safeSpawn.getBlockZ());
+        plugin.logInfo("Safe spawn found at X=" + safeSpawn.getBlockX() + " Y=" + safeSpawn.getBlockY() + " Z=" + safeSpawn.getBlockZ());
         
         // Small delay, then teleport players (1 second)
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             
-            plugin.getLogger().info("Starting player teleportation...");
+            plugin.logDebug("Starting player teleportation...");
             
             // Teleport players one by one with staggered delays
             int successCount = 0;
@@ -593,19 +593,19 @@ public class FullResetCommand implements CommandExecutor {
                         
                         Bukkit.getScheduler().runTaskLater(plugin, () -> {
                             player.teleport(finalSpawn);
-                            plugin.getLogger().info("✓ Teleported " + player.getName() + " to spawn");
+                            plugin.logDebug("✓ Teleported " + player.getName() + " to spawn");
                         }, delay);
                         
                         successCount++;
                         
                     } catch (Exception e) {
-                        plugin.getLogger().severe("✗ Failed to teleport " + player.getName() + ": " + e.getMessage());
+                        plugin.logWarning("✗ Failed to teleport " + player.getName() + ": " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
             
-            plugin.getLogger().info("Scheduled " + successCount + " players for teleportation");
+            plugin.logDebug("Scheduled " + successCount + " players for teleportation");
             
             // Broadcast completion message after all players teleported
             final int totalDelay = (successCount * 5) + 20; // Add 1 second after last player
@@ -615,9 +615,9 @@ public class FullResetCommand implements CommandExecutor {
                         "<gold><bold>═══════════════════════════════════\n<green><bold>WORLD RESET COMPLETE!\n<yellow>Teleporting you back...\n<gold><bold>═══════════════════════════════════");
                 Bukkit.broadcast(ColorUtil.parse(completeMsg));
                 
-                plugin.getLogger().info("═══════════════════════════════════");
-                plugin.getLogger().info("RESET COMPLETE! All players teleported.");
-                plugin.getLogger().info("═══════════════════════════════════");
+                plugin.logInfo("═══════════════════════════════════");
+                plugin.logInfo("RESET COMPLETE! All players teleported.");
+                plugin.logInfo("═══════════════════════════════════");
                 
                 // Reset complete - clear the flag
                 plugin.setResetInProgress(false);
@@ -636,7 +636,7 @@ public class FullResetCommand implements CommandExecutor {
         int x = start.getBlockX();
         int z = start.getBlockZ();
         
-        plugin.getLogger().info("Searching for safe spawn point (checking for water, lava, steep terrain)...");
+        plugin.logDebug("Searching for safe spawn point (checking for water, lava, steep terrain)...");
         
         // Search in a spiral pattern to find safe, flat ground
         int searchRadius = 0;
@@ -652,7 +652,7 @@ public class FullResetCommand implements CommandExecutor {
             if (safe != null) {
                 int score = evaluateSpawnQuality(world, x, z);
                 if (score >= 80) { // Excellent spawn found
-                    plugin.getLogger().info("Found excellent spawn at X=" + x + " Y=" + safe.getBlockY() + " Z=" + z + " (score: " + score + ")");
+                    plugin.logInfo("Found excellent spawn at X=" + x + " Y=" + safe.getBlockY() + " Z=" + z + " (score: " + score + ")");
                     return safe;
                 }
                 if (score > bestScore) {
@@ -676,7 +676,7 @@ public class FullResetCommand implements CommandExecutor {
                         
                         // If we found an excellent spawn, use it immediately
                         if (score >= 80) {
-                            plugin.getLogger().info("Found excellent spawn at X=" + (x+dx) + " Y=" + safe.getBlockY() + " Z=" + (z+dz) + " (score: " + score + ", offset: " + dx + "," + dz + ")");
+                            plugin.logInfo("Found excellent spawn at X=" + (x+dx) + " Y=" + safe.getBlockY() + " Z=" + (z+dz) + " (score: " + score + ", offset: " + dx + "," + dz + ")");
                             return safe;
                         }
                         
@@ -691,19 +691,19 @@ public class FullResetCommand implements CommandExecutor {
             
             // If we have a decent spawn after searching 200 blocks, use it
             if (searchRadius >= 200 && bestScore >= 60) {
-                plugin.getLogger().info("Found good spawn at distance " + searchRadius + " (score: " + bestScore + ")");
+                plugin.logInfo("Found good spawn at distance " + searchRadius + " (score: " + bestScore + ")");
                 return bestCandidate;
             }
         }
         
         // Use best candidate if we found one
         if (bestCandidate != null) {
-            plugin.getLogger().warning("Using best available spawn (score: " + bestScore + ")");
+            plugin.logWarning("Using best available spawn (score: " + bestScore + ")");
             return bestCandidate;
         }
         
         // Fallback: find any non-water surface
-        plugin.getLogger().warning("Could not find ideal spawn within " + maxRadius + " blocks! Using fallback.");
+        plugin.logWarning("Could not find ideal spawn within " + maxRadius + " blocks! Using fallback.");
         int surfaceY = world.getHighestBlockYAt(x, z);
         Location fallback = new Location(world, x + 0.5, surfaceY + 1, z + 0.5);
         fallback.setPitch(0);
@@ -1034,7 +1034,7 @@ public class FullResetCommand implements CommandExecutor {
             }
         });
         
-        plugin.getLogger().info("Reset player: " + player.getName());
+        plugin.logDebug("Reset player: " + player.getName());
     }
     
     /**
@@ -1066,9 +1066,9 @@ public class FullResetCommand implements CommandExecutor {
         try {
             File seedFile = new File(plugin.getDataFolder(), "pending_seed.txt");
             Files.write(seedFile.toPath(), String.valueOf(seed).getBytes());
-            plugin.getLogger().info("Saved pending seed to file: " + seed);
+            plugin.logDebug("Saved pending seed to file: " + seed);
         } catch (IOException e) {
-            plugin.getLogger().severe("Failed to save pending seed: " + e.getMessage());
+            plugin.logWarning("Failed to save pending seed: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -1077,11 +1077,11 @@ public class FullResetCommand implements CommandExecutor {
      */
     private void deleteWorldFolder(File worldFolder) {
         if (!worldFolder.exists()) {
-            plugin.getLogger().info("World folder doesn't exist: " + worldFolder.getName());
+            plugin.logDebug("World folder doesn't exist: " + worldFolder.getName());
             return;
         }
         
-        plugin.getLogger().info("Deleting world folder: " + worldFolder.getAbsolutePath());
+        plugin.logDebug("Deleting world folder: " + worldFolder.getAbsolutePath());
         
         try {
             Files.walkFileTree(worldFolder.toPath(), new SimpleFileVisitor<Path>() {
@@ -1097,9 +1097,9 @@ public class FullResetCommand implements CommandExecutor {
                     return FileVisitResult.CONTINUE;
                 }
             });
-            plugin.getLogger().info("Successfully deleted: " + worldFolder.getName());
+            plugin.logDebug("Successfully deleted: " + worldFolder.getName());
         } catch (IOException e) {
-            plugin.getLogger().severe("Failed to delete world folder: " + worldFolder.getName());
+            plugin.logWarning("Failed to delete world folder: " + worldFolder.getName());
             e.printStackTrace();
         }
     }

@@ -64,8 +64,11 @@ public class PlayerDeathListener implements Listener {
                 if (newHolder != null) {
                     // Transfer egg holder to the new holder
                     plugin.getCustomEndFightManager().onEggHolderKilled(newHolder);
-                    return; // Don't apply other death logic
+                } else {
+                    // No killer found - egg should respawn
+                    plugin.getCustomEndFightManager().onEggHolderDied();
                 }
+                return; // Don't apply other death logic
             }
         }
         

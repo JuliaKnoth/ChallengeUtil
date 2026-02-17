@@ -473,7 +473,8 @@ public class SettingsGUI {
         // Row 0 (0-8): Team Modes (top row)
         gui.setItem(1, createChallengeItem("manhunt_mode", Material.COMPASS));
         gui.setItem(2, createChallengeItem("team_race_mode", Material.RECOVERY_COMPASS));
-        gui.setItem(3, createHiddenToggle("custom_end_fight"));
+        // Slot 3 is intentionally empty (custom_end_fight is now auto-managed by team_race_mode)
+        gui.setItem(3, createEmptyGlassPane());
         
         // Row 1 (9-17): Empty
         
@@ -513,7 +514,7 @@ public class SettingsGUI {
     /**
      * Create a hidden toggle that looks like a filler glass pane
      */
-    private ItemStack createHiddenToggle(String challengeName) {
+    private ItemStack createEmptyGlassPane() {
         ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text(" "));

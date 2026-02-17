@@ -111,7 +111,7 @@ public class ChunkItemChallengeListener implements Listener {
                     Material material = Material.valueOf(itemName.toUpperCase());
                     excludedItems.add(material);
                 } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid excluded item in config: " + itemName);
+                    plugin.logWarning("Invalid excluded item in config: " + itemName);
                 }
             }
         }
@@ -130,7 +130,7 @@ public class ChunkItemChallengeListener implements Listener {
             }
         }
         
-        plugin.getLogger().info("Cached " + validItemsCache.size() + " valid chunk items");
+        plugin.logDebug("Cached " + validItemsCache.size() + " valid chunk items");
     }
     
     /**
@@ -306,7 +306,7 @@ public class ChunkItemChallengeListener implements Listener {
             // Clear old entries to prevent memory leak
             chunkItems.clear();
             playerItemCount.put(playerId, 0);
-            plugin.getLogger().info("Cleared chunk item cache for " + player.getName() + " (reached limit)");
+            plugin.logDebug("Cleared chunk item cache for " + player.getName() + " (reached limit)");
         }
         
         // Check if player has already received an item for this chunk

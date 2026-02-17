@@ -19,6 +19,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -39,12 +40,15 @@ public class CustomEndFightManager {
     private BukkitTask portalRemovalTask = null;
     private BukkitTask teamTimerTask = null;
     private final Map<UUID, Boolean> immortalPlayers = new HashMap<>();
-    private Location endSpawnLocation = null;
+    private BukkitTask glowEffectTask = null;
     
     // Team-based timer system
     private final Map<String, Integer> teamHoldTimes = new HashMap<>(); // Team name -> seconds held
-    private static final int WIN_TIME_SECONDS = 600; // 10 minutes = 600 seconds
+    private static final int WIN_TIME_SECONDS = 10 * 60; // 10 minutes = 600 seconds
     private int currentHoldTime = 0; // Current continuous hold time in seconds
+    private final Set<String> teamsCompletedTenMinutes = new java.util.HashSet<>(); // Teams that survived 10 minutes
+    private boolean portalBlocksSpawned = false; // Track if portal blocks are currently spawned
+    private Integer spawnedPortalY = null; // Store the Y level where portal was spawned
     
     public CustomEndFightManager(ChallengeUtil plugin) {
         this.plugin = plugin;
@@ -85,7 +89,7 @@ public class CustomEndFightManager {
                     eggHolder.removePotionEffect(effect.getType());
                 }
             } catch (Exception e) {
-                plugin.getLogger().warning("Error cleaning up egg holder: " + e.getMessage());
+                plugin.logWarning("Error cleaning up egg holder: " + e.getMessage());
             }
         }
         this.eggHolder = null;
@@ -117,6 +121,11 @@ public class CustomEndFightManager {
             teamTimerTask = null;
         }
         
+        if (glowEffectTask != null) {
+            glowEffectTask.cancel();
+            glowEffectTask = null;
+        }
+        
         // Clean up all immortal players
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (immortalPlayers.containsKey(player.getUniqueId())) {
@@ -130,8 +139,9 @@ public class CustomEndFightManager {
         currentHoldTime = 0;
         eggHolderTeam = null;
         lastDamager = null;
-        
-        endSpawnLocation = null;
+        teamsCompletedTenMinutes.clear();
+        portalBlocksSpawned = false;
+        spawnedPortalY = null;
     }
     
     /**
@@ -147,7 +157,7 @@ public class CustomEndFightManager {
             }
             
             final World end = world;
-            plugin.getLogger().info("Found End world for portal removal: " + end.getName());
+            plugin.logDebug("Found End world for portal removal: " + end.getName());
             
             // Run with a delay to ensure chunks are loaded and portal blocks have been created
             new BukkitRunnable() {
@@ -218,7 +228,7 @@ public class CustomEndFightManager {
                         }
                     }
                     
-                    plugin.getLogger().info("Removed " + portalCount + " END_PORTAL blocks and " + 
+                    plugin.logDebug("Removed " + portalCount + " END_PORTAL blocks and " + 
                                            gatewayCount + " END_GATEWAY blocks from the End dimension (" + end.getName() + ")");
                 }
             }.runTaskLater(plugin, 5L);
@@ -237,13 +247,20 @@ public class CustomEndFightManager {
             }
             
             final World end = world;
-            plugin.getLogger().info("Starting continuous portal removal task for End world: " + end.getName());
+            plugin.logDebug("Starting continuous portal removal task for End world: " + end.getName());
             
             portalRemovalTask = new BukkitRunnable() {
                 @Override
                 public void run() {
                     if (!active) {
                         this.cancel();
+                        return;
+                    }
+                    
+                    // Only remove portals if they shouldn't exist
+                    // Portals should exist if: portal blocks are spawned (a team completed 10 min)
+                    if (portalBlocksSpawned) {
+                        // Portal is allowed to exist, don't remove it
                         return;
                     }
                     
@@ -382,9 +399,6 @@ public class CustomEndFightManager {
             makeImmortal(player);
         }
         
-        // Set spawn in the End
-        setEndSpawn(collector.getLocation());
-        
         // Start the epic animation sequence
         startEpicAnimation(collector);
     }
@@ -422,20 +436,10 @@ public class CustomEndFightManager {
     }
     
     /**
-     * Set the spawn location in the End
+     * Check if the portal has been unlocked (team completed 10 minutes)
      */
-    private void setEndSpawn(Location location) {
-        World end = location.getWorld();
-        if (end != null && end.getEnvironment() == World.Environment.THE_END) {
-            this.endSpawnLocation = location.clone();
-        }
-    }
-    
-    /**
-     * Get the End spawn location
-     */
-    public Location getEndSpawnLocation() {
-        return endSpawnLocation;
+    public boolean isPortalUnlocked() {
+        return portalBlocksSpawned;
     }
     
     /**
@@ -483,7 +487,7 @@ public class CustomEndFightManager {
                             Location particleLoc = collector.getLocation().clone().add(0, 1.0, 0);
                             spawnEpicParticles(particleLoc);
                         } catch (Exception e) {
-                            plugin.getLogger().warning("Error spawning particles: " + e.getMessage());
+                            plugin.logWarning("Error spawning particles: " + e.getMessage());
                         }
                         
                         // Play sound periodically
@@ -491,7 +495,7 @@ public class CustomEndFightManager {
                             try {
                                 collector.getWorld().playSound(collector.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1.0f, 1.0f + (ticks / 100.0f));
                             } catch (Exception e) {
-                                plugin.getLogger().warning("Error playing sound: " + e.getMessage());
+                                plugin.logWarning("Error playing sound: " + e.getMessage());
                             }
                         }
                         
@@ -519,14 +523,14 @@ public class CustomEndFightManager {
                                 collector.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
                                 finalizeEggHolderSetup(collector);
                             } catch (Exception e) {
-                                plugin.getLogger().severe("Error in finalizeEggHolderSetup: " + e.getMessage());
+                                plugin.logWarning("Error in finalizeEggHolderSetup: " + e.getMessage());
                                 e.printStackTrace();
                             }
                             this.cancel();
                             return;
                         }
                     } catch (Exception e) {
-                        plugin.getLogger().severe("Error in animation runnable: " + e.getMessage());
+                        plugin.logWarning("Error in animation runnable: " + e.getMessage());
                         e.printStackTrace();
                         this.cancel();
                         // Try to finalize anyway to not leave player stuck
@@ -536,7 +540,7 @@ public class CustomEndFightManager {
                             collector.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
                             finalizeEggHolderSetup(collector);
                         } catch (Exception ex) {
-                            plugin.getLogger().severe("Error in emergency finalize: " + ex.getMessage());
+                            plugin.logWarning("Error in emergency finalize: " + ex.getMessage());
                         }
                     }
                 }
@@ -547,13 +551,13 @@ public class CustomEndFightManager {
                 finalizeEggHolderSetup(collector);
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("Exception when starting animation: " + e.getMessage());
+            plugin.logWarning("Exception when starting animation: " + e.getMessage());
             e.printStackTrace();
             // Skip animation and go straight to finalization
             try {
                 finalizeEggHolderSetup(collector);
             } catch (Exception ex) {
-                plugin.getLogger().severe("Error in emergency finalize after animation failure: " + ex.getMessage());
+                plugin.logWarning("Error in emergency finalize after animation failure: " + ex.getMessage());
             }
         }
     }
@@ -585,38 +589,32 @@ public class CustomEndFightManager {
         this.eggHolderTeam = plugin.getDataManager().getPlayerTeam(eggHolder.getUniqueId());
         
         try {
-            // Set egg holder's max health to 250
-            eggHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(200.0);
-            eggHolder.setHealth(200.0);
+            // Set egg holder's max health to 40
+            eggHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(40.0);
+            eggHolder.setHealth(40.0);
         } catch (Exception e) {
-            plugin.getLogger().severe("Error setting egg holder health: " + e.getMessage());
+            plugin.logWarning("Error setting egg holder health: " + e.getMessage());
         }
         
         try {
-            // Apply glow effect for egg holder
-            eggHolder.addPotionEffect(new PotionEffect(
-                PotionEffectType.GLOWING,
-                Integer.MAX_VALUE,
-                0,
-                false,
-                false
-            ));
+            // Start recurring glow effect application
+            startGlowEffectTask();
         } catch (Exception e) {
-            plugin.getLogger().severe("Error applying egg holder effects: " + e.getMessage());
+            plugin.logWarning("Error starting glow effect task: " + e.getMessage());
         }
         
         try {
             // Create boss bar for egg holder's health
             createEggHolderBossBar(eggHolder);
         } catch (Exception e) {
-            plugin.getLogger().severe("Error creating boss bar: " + e.getMessage());
+            plugin.logWarning("Error creating boss bar: " + e.getMessage());
         }
         
         try {
             // Change all other players to the same team
             setupTeams(eggHolder);
         } catch (Exception e) {
-            plugin.getLogger().severe("Error setting up teams: " + e.getMessage());
+            plugin.logWarning("Error setting up teams: " + e.getMessage());
         }
         
         try {
@@ -625,14 +623,14 @@ public class CustomEndFightManager {
                 removeImmortal(player);
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("Error removing immortality: " + e.getMessage());
+            plugin.logWarning("Error removing immortality: " + e.getMessage());
         }
         
         try {
             // Send messages to all players
             announceEggHolderPhase(eggHolder);
         } catch (Exception e) {
-            plugin.getLogger().severe("Error announcing phase: " + e.getMessage());
+            plugin.logWarning("Error announcing phase: " + e.getMessage());
         }
         
         try {
@@ -641,7 +639,7 @@ public class CustomEndFightManager {
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 0.8f);
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("Error playing sound: " + e.getMessage());
+            plugin.logWarning("Error playing sound: " + e.getMessage());
         }
     }
     
@@ -651,11 +649,13 @@ public class CustomEndFightManager {
     private void createEggHolderBossBar(Player eggHolder) {
         updateBossBarTitle(eggHolder);
         
+        BossBar.Color teamColor = getTeamBossBarColor(eggHolderTeam);
+        
         eggHolderBossBar = BossBar.bossBar(
             Component.text(""),
             1.0f,
-            BossBar.Color.PURPLE,
-            BossBar.Overlay.NOTCHED_20
+            teamColor,
+            BossBar.Overlay.NOTCHED_10
         );
         
         updateBossBarTitle(eggHolder);
@@ -670,6 +670,53 @@ public class CustomEndFightManager {
         
         // Start team timer task
         startTeamTimerTask();
+    }
+    
+    /**
+     * Get the boss bar color for a team
+     */
+    private BossBar.Color getTeamBossBarColor(String team) {
+        if (team == null) {
+            return BossBar.Color.PURPLE;
+        }
+        
+        switch (team.toLowerCase()) {
+            case "rot":
+            case "red":
+                return BossBar.Color.RED;
+            case "blau":
+            case "blue":
+                return BossBar.Color.BLUE;
+            case "grün":
+            case "green":
+                return BossBar.Color.GREEN;
+            case "gelb":
+            case "yellow":
+                return BossBar.Color.YELLOW;
+            case "lila":
+            case "purple":
+                return BossBar.Color.PURPLE;
+            case "aqua":
+            case "cyan":
+                return BossBar.Color.BLUE;
+            case "weiß":
+            case "white":
+                return BossBar.Color.WHITE;
+            case "orange":
+                return BossBar.Color.YELLOW;
+            case "pink":
+                return BossBar.Color.PINK;
+            case "grau":
+            case "gray":
+            case "grey":
+                return BossBar.Color.WHITE;
+            case "runner":
+                return BossBar.Color.PURPLE;
+            case "hunter":
+                return BossBar.Color.YELLOW;
+            default:
+                return BossBar.Color.PURPLE;
+        }
     }
     
     /**
@@ -735,15 +782,42 @@ public class CustomEndFightManager {
                 // Increment hold time
                 currentHoldTime++;
                 
-                // Check win condition (use empty string as key if team is null)
+                // Check if team completed 10 minutes (use empty string as key if team is null)
                 String teamKey = eggHolderTeam != null ? eggHolderTeam : "";
                 int totalTeamTime = teamHoldTimes.getOrDefault(teamKey, 0) + currentHoldTime;
-                if (totalTeamTime >= WIN_TIME_SECONDS) {
-                    onTeamWins(eggHolderTeam != null ? eggHolderTeam : "No Team");
-                    this.cancel();
+                if (totalTeamTime >= WIN_TIME_SECONDS && !teamsCompletedTenMinutes.contains(teamKey)) {
+                    onTeamCompletedTenMinutes(eggHolderTeam != null ? eggHolderTeam : "No Team");
                 }
             }
         }.runTaskTimer(plugin, 20L, 20L); // Run every second (20 ticks)
+    }
+    
+    /**
+     * Start a task to continuously apply glow effect to the egg holder every 5 seconds
+     */
+    private void startGlowEffectTask() {
+        glowEffectTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!active || eggHolder == null || !eggHolder.isOnline()) {
+                    this.cancel();
+                    return;
+                }
+                
+                try {
+                    // Apply glow effect for 6 seconds (longer than interval to ensure no gaps)
+                    eggHolder.addPotionEffect(new PotionEffect(
+                        PotionEffectType.GLOWING,
+                        120, // 6 seconds (20 ticks/second * 6)
+                        0,
+                        false,
+                        false
+                    ));
+                } catch (Exception e) {
+                    plugin.logWarning("Error applying glow effect to egg holder: " + e.getMessage());
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 100L); // Run immediately and every 5 seconds (100 ticks)
     }
     
     private void setupTeams(Player eggHolder) {
@@ -772,13 +846,57 @@ public class CustomEndFightManager {
     }
     
     /**
-     * Handle when a team wins by holding the egg for 10 minutes
+     * Handle when a team completes 10 minutes - spawn portal blocks
      */
-    private void onTeamWins(String winningTeam) {
+    private void onTeamCompletedTenMinutes(String team) {
+        String teamKey = team.equals("No Team") ? "" : team;
+        teamsCompletedTenMinutes.add(teamKey);
+        
+        // Spawn portal blocks
+        spawnEndPortalBlocks();
+        
+        // Announce portal unlock with different objectives for egg holder vs others
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendMessage(Component.text(""));
+            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
+            
+            // Show title and subtitle
+            player.sendMessage(lang.getComponent("endfight.portal-unlocked-title")
+                .append(Component.text(" "))
+                .append(lang.getComponent("endfight.portal-unlocked-subtitle")));
+            
+            // Show objective based on whether player is the egg holder
+            if (eggHolder != null && player.getUniqueId().equals(eggHolder.getUniqueId())) {
+                player.sendMessage(Component.text(""));
+                player.sendMessage(lang.getComponent("endfight.objective-extract-egg"));
+            } else {
+                player.sendMessage(lang.getComponent("endfight.portal-team-can-escape")
+                    .replaceText(builder -> builder.matchLiteral("{team}").replacement(team)));
+            }
+            
+            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
+            player.sendMessage(Component.text(""));
+            
+            // Play dramatic sound
+            player.playSound(player.getLocation(), Sound.BLOCK_END_PORTAL_SPAWN, 1.0f, 1.0f);
+        }
+    }
+    
+    /**
+     * Handle when the egg holder successfully escapes to the overworld - team wins!
+     * This should be called from a listener when the egg holder changes world to NORMAL
+     */
+    public void onEggHolderEscapedToOverworld() {
+        if (!active || eggHolder == null) {
+            return;
+        }
+        
+        String winningTeam = eggHolderTeam != null ? eggHolderTeam : "No Team";
+        
         // Create title screen
         Component titleText = lang.getComponent("endfight.team-won")
             .replaceText(builder -> builder.matchLiteral("{team}").replacement(winningTeam));
-        Component subtitleText = lang.getComponent("endfight.team-won-subtitle");
+        Component subtitleText = lang.getComponent("endfight.team-escaped");
         
         // Create title with timings
         Title gameTitle = Title.title(
@@ -799,9 +917,10 @@ public class CustomEndFightManager {
             // Send chat messages
             player.sendMessage(Component.text(""));
             player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
-            player.sendMessage(lang.getComponent("endfight.team-won")
-                .replaceText(builder -> builder.matchLiteral("{team}").replacement(winningTeam)));
-            player.sendMessage(lang.getComponent("endfight.team-won-subtitle"));
+            player.sendMessage(Component.text("🏆 ", NamedTextColor.GOLD, TextDecoration.BOLD)
+                .append(lang.getComponent("endfight.team-won")
+                    .replaceText(builder -> builder.matchLiteral("{team}").replacement(winningTeam))));
+            player.sendMessage(Component.text("  ").append(lang.getComponent("endfight.team-escaped")));
             player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
             player.sendMessage(Component.text(""));
             
@@ -814,6 +933,275 @@ public class CustomEndFightManager {
         
         // Deactivate the end fight
         deactivate();
+    }
+    
+    /**
+     * Spawn END_PORTAL blocks in the End's exit portal frame
+     */
+    private void spawnEndPortalBlocks() {
+        // Find all End worlds
+        for (World world : Bukkit.getWorlds()) {
+            if (world.getEnvironment() != World.Environment.THE_END) {
+                continue;
+            }
+            
+            final World end = world;
+            plugin.logDebug("Spawning portal blocks in End world: " + end.getName());
+            
+            // Ensure chunks around (0,0) are loaded
+            end.loadChunk(0, 0);
+            for (int cx = -1; cx <= 1; cx++) {
+                for (int cz = -1; cz <= 1; cz++) {
+                    end.loadChunk(cx, cz);
+                }
+            }
+            
+            // Find the actual portal frame Y level
+            Integer portalY = findEndPortalFrameY(end);
+            
+            if (portalY == null) {
+                plugin.logWarning("Could not find End portal bedrock platform in End world: " + end.getName());
+                plugin.logWarning("Attempting to spawn at default Y level 64");
+                portalY = 64; // Fallback to typical Y level
+            } else {
+                plugin.logDebug("Found End portal platform at y=" + portalY);
+            }
+            
+            // Spawn portal blocks at the detected Y level
+            Location exitPortalCenter = new Location(end, 0, portalY, 0);
+            
+            int portalBlocksPlaced = 0;
+            // Create a 5x5 pattern of portal blocks
+            for (int x = -2; x <= 2; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    Block block = end.getBlockAt(exitPortalCenter.getBlockX() + x, portalY, exitPortalCenter.getBlockZ() + z);
+                    plugin.logDebug("Block at (" + x + ", " + portalY + ", " + z + ") is " + block.getType());
+                    // Only place portal blocks where there's AIR (don't replace bedrock)
+                    if (block.getType() == Material.AIR || block.getType() == Material.END_PORTAL) {
+                        block.setType(Material.END_PORTAL);
+                        portalBlocksPlaced++;
+                    }
+                }
+            }
+            
+            portalBlocksSpawned = true;
+            spawnedPortalY = portalY; // Store the Y level for later removal
+            plugin.logDebug("Portal blocks spawned successfully: " + portalBlocksPlaced + " blocks placed at y=" + portalY);
+        }
+    }
+    
+    /**
+     * Find the Y level of the End portal frame by searching for bedrock blocks at x=0, z=0
+     * @param end The End world to search in
+     * @return The Y level of the portal frame, or null if not found
+     */
+    private Integer findEndPortalFrameY(World end) {
+        // The End exit portal is made of bedrock and always spawns at x=0, z=0
+        // Search for bedrock blocks at coordinates (0, y, 0) to find the portal platform
+        // Check Y levels from 40 to 100 (expanded range to catch all possibilities)
+        plugin.logDebug("Searching for End portal bedrock platform...");
+        
+        for (int y = 40; y <= 100; y++) {
+            // Check if this Y level has bedrock in the 5x5 area
+            int bedrockCount = 0;
+            int airCount = 0;
+            
+            for (int x = -2; x <= 2; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    Block block = end.getBlockAt(x, y, z);
+                    Material type = block.getType();
+                    
+                    if (type == Material.BEDROCK) {
+                        bedrockCount++;
+                    } else if (type == Material.AIR || type == Material.END_PORTAL) {
+                        airCount++;
+                    }
+                    
+                    plugin.logDebug("  Block at (" + x + ", " + y + ", " + z + ") = " + type);
+                }
+            }
+            
+            plugin.logDebug("Y=" + y + ": Bedrock=" + bedrockCount + ", Air=" + airCount);
+            
+            // The portal platform should have some bedrock (the frame) and some air (the middle)
+            // Typical structure: bedrock around edges, air in middle (or portal blocks if already spawned)
+            if (bedrockCount >= 5 && airCount >= 5) {
+                plugin.logDebug("Found portal platform at Y=" + y);
+                return y;
+            }
+        }
+        
+        plugin.logDebug("Portal platform not found in range Y=40-100");
+        return null; // Portal platform not found
+    }
+    
+    /**
+     * Remove spawned END_PORTAL blocks from the exit portal
+     */
+    private void removeSpawnedPortalBlocks() {
+        if (!portalBlocksSpawned) {
+            return;
+        }
+        
+        // Find all End worlds
+        for (World world : Bukkit.getWorlds()) {
+            if (world.getEnvironment() != World.Environment.THE_END) {
+                continue;
+            }
+            
+            final World end = world;
+            plugin.logDebug("Removing spawned portal blocks from End world: " + end.getName());
+            
+            Integer portalY = spawnedPortalY;
+            
+            // If we don't have the stored Y level, try to find it
+            if (portalY == null) {
+                plugin.logDebug("Stored portal Y level is null, attempting to find it...");
+                portalY = findEndPortalFrameY(end);
+            }
+            
+            if (portalY == null) {
+                plugin.logWarning("Could not find End portal frame when removing blocks, searching for portal blocks directly...");
+                // Fallback: search for portal blocks directly in a range
+                for (int y = 40; y <= 100; y++) {
+                    boolean foundPortal = false;
+                    for (int x = -2; x <= 2; x++) {
+                        for (int z = -2; z <= 2; z++) {
+                            Block block = end.getBlockAt(x, y, z);
+                            if (block.getType() == Material.END_PORTAL) {
+                                block.setType(Material.AIR);
+                                foundPortal = true;
+                            }
+                        }
+                    }
+                    if (foundPortal) {
+                        plugin.logDebug("Found and removed portal blocks at y=" + y);
+                    }
+                }
+                portalBlocksSpawned = false;
+                spawnedPortalY = null;
+                return;
+            }
+            
+            // Remove portal blocks at the known Y level
+            Location exitPortalCenter = new Location(end, 0, portalY, 0);
+            
+            int blocksRemoved = 0;
+            // Remove 5x5 pattern of portal blocks
+            for (int x = -2; x <= 2; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    Block block = end.getBlockAt(exitPortalCenter.getBlockX() + x, portalY, exitPortalCenter.getBlockZ() + z);
+                    if (block.getType() == Material.END_PORTAL) {
+                        block.setType(Material.AIR);
+                        blocksRemoved++;
+                    }
+                }
+            }
+            
+            portalBlocksSpawned = false;
+            spawnedPortalY = null;
+            plugin.logDebug("Portal blocks removed successfully: " + blocksRemoved + " blocks removed from y=" + portalY);
+        }
+    }
+    
+    /**
+     * Handle when the egg holder dies without a killer (void, fall damage, etc.)
+     * The egg should respawn at world spawn
+     */
+    public void onEggHolderDied() {
+        if (!active || eggHolder == null) {
+            return;
+        }
+        
+        Player previousHolder = eggHolder;
+        String previousTeam = eggHolderTeam;
+        
+        // Use empty strings as keys for null teams
+        String prevTeamKey = previousTeam != null ? previousTeam : "";
+        
+        // Save the previous team's accumulated time
+        int accumulated = teamHoldTimes.getOrDefault(prevTeamKey, 0) + currentHoldTime;
+        teamHoldTimes.put(prevTeamKey, accumulated);
+        
+        // Clean up previous holder
+        try {
+            if (previousHolder.isOnline()) {
+                previousHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(20.0);
+                if (previousHolder.getHealth() > 20.0) {
+                    previousHolder.setHealth(20.0);
+                }
+                for (PotionEffect effect : previousHolder.getActivePotionEffects()) {
+                    previousHolder.removePotionEffect(effect.getType());
+                }
+                // Remove dragon egg from previous holder
+                previousHolder.getInventory().remove(Material.DRAGON_EGG);
+            }
+        } catch (Exception e) {
+            plugin.logWarning("Error cleaning up previous egg holder: " + e.getMessage());
+        }
+        
+        // Remove portal blocks since egg holder died
+        removeSpawnedPortalBlocks();
+        
+        // Respawn the egg at coordinates (0, 100, 0) in the End dimension
+        // Always find the End world, regardless of where the holder died
+        World endWorld = null;
+        for (World world : Bukkit.getWorlds()) {
+            if (world.getEnvironment() == World.Environment.THE_END) {
+                endWorld = world;
+                break;
+            }
+        }
+        
+        if (endWorld != null) {
+            Location blockLoc = new Location(endWorld, 0, 100, 0);
+            endWorld.getBlockAt(blockLoc).setType(Material.DRAGON_EGG);
+            
+            // Announce egg respawn
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.sendMessage(Component.text(""));
+                player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.LIGHT_PURPLE));
+                player.sendMessage(lang.getComponent("endfight.egg-respawned"));
+                player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.LIGHT_PURPLE));
+                player.sendMessage(Component.text(""));
+                player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.8f);
+            }
+        } else {
+            plugin.logWarning("Could not find End world to respawn egg!");
+        }
+        
+        // Reset egg holder state
+        this.eggHolder = null;
+        this.eggHolderTeam = null;
+        this.lastDamager = null;
+        this.eggCollected = false;
+        currentHoldTime = 0;
+        
+        // Remove boss bar
+        if (eggHolderBossBar != null) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                try {
+                    player.hideBossBar(eggHolderBossBar);
+                } catch (Exception e) {
+                    // Ignore errors
+                }
+            }
+            eggHolderBossBar = null;
+        }
+        
+        // Stop tasks
+        if (healthUpdateTask != null) {
+            healthUpdateTask.cancel();
+            healthUpdateTask = null;
+        }
+        if (teamTimerTask != null) {
+            teamTimerTask.cancel();
+            teamTimerTask = null;
+        }
+        if (glowEffectTask != null) {
+            glowEffectTask.cancel();
+            glowEffectTask = null;
+        }
     }
     
     /**
@@ -851,6 +1239,17 @@ public class CustomEndFightManager {
             // and will be added to currentHoldTime when checking win conditions and displaying time
         }
         
+        // Check if we need to manage portal blocks (reuse newTeamKey already defined above)
+        if (teamsCompletedTenMinutes.contains(newTeamKey)) {
+            // New holder's team has completed 10 minutes, spawn portal if not already spawned
+            if (!portalBlocksSpawned) {
+                spawnEndPortalBlocks();
+            }
+        } else {
+            // New holder's team hasn't completed 10 minutes, remove portal
+            removeSpawnedPortalBlocks();
+        }
+        
         // Transfer egg holder status
         transferEggHolder(killer, newTeam, previousHolder);
     }
@@ -867,7 +1266,7 @@ public class CustomEndFightManager {
             // Force dragon egg into new holder's inventory
             newHolder.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.DRAGON_EGG, 1));
         } catch (Exception e) {
-            plugin.getLogger().warning("Error transferring dragon egg: " + e.getMessage());
+            plugin.logWarning("Error transferring dragon egg: " + e.getMessage());
         }
         
         // Clean up previous holder
@@ -882,7 +1281,7 @@ public class CustomEndFightManager {
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("Error cleaning up previous egg holder: " + e.getMessage());
+            plugin.logWarning("Error cleaning up previous egg holder: " + e.getMessage());
         }
         
         // Set new holder
@@ -892,27 +1291,30 @@ public class CustomEndFightManager {
         
         // Set new holder's health
         try {
-            newHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(200.0);
-            newHolder.setHealth(200.0);
+            newHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(40.0);
+            newHolder.setHealth(40.0);
         } catch (Exception e) {
-            plugin.getLogger().severe("Error setting new egg holder health: " + e.getMessage());
+            plugin.logWarning("Error setting new egg holder health: " + e.getMessage());
         }
         
-        // Apply glow effect for new egg holder
+        // Restart glow effect task for new holder
         try {
-            newHolder.addPotionEffect(new PotionEffect(
-                PotionEffectType.GLOWING,
-                Integer.MAX_VALUE,
-                0,
-                false,
-                false
-            ));
+            if (glowEffectTask != null) {
+                glowEffectTask.cancel();
+            }
+            startGlowEffectTask();
         } catch (Exception e) {
-            plugin.getLogger().severe("Error applying new egg holder effects: " + e.getMessage());
+            plugin.logWarning("Error restarting glow effect task: " + e.getMessage());
         }
         
         // Update boss bar
         updateBossBarTitle(newHolder);
+        
+        // Update boss bar color for new team
+        if (eggHolderBossBar != null) {
+            BossBar.Color teamColor = getTeamBossBarColor(newTeam);
+            eggHolderBossBar = eggHolderBossBar.color(teamColor);
+        }
         
         // Announce transfer
         announceEggHolderTransfer(newHolder, newTeam);
@@ -929,19 +1331,44 @@ public class CustomEndFightManager {
         int minutes = remainingTime / 60;
         int seconds = remainingTime % 60;
         
+        // Check if the new holder's team has completed 10 minutes
+        boolean teamCompletedTenMinutes = teamsCompletedTenMinutes.contains(teamKey);
+        
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(Component.text(""));
             player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.LIGHT_PURPLE));
             player.sendMessage(lang.getComponent("endfight.new-holder")
                 .replaceText(builder -> builder.matchLiteral("{player}").replacement(newHolder.getName())));
-            if (team != null) {
-                player.sendMessage(lang.getComponent("endfight.team-time-remaining")
-                    .replaceText(builder -> builder.matchLiteral("{team}").replacement(team))
-                    .replaceText(builder -> builder.matchLiteral("{time}").replacement(String.format("%d:%02d", minutes, seconds))));
+            
+            // Show objective based on whether the new holder's team completed 10 minutes
+            if (teamCompletedTenMinutes) {
+                // This team has completed 10 minutes - show extraction objective
+                if (player.getUniqueId().equals(newHolder.getUniqueId())) {
+                    player.sendMessage(Component.text(""));
+                    player.sendMessage(lang.getComponent("endfight.objective-extract-egg"));
+                } else {
+                    player.sendMessage(lang.getComponent("endfight.objective-team-must-extract")
+                        .replaceText(builder -> builder.matchLiteral("{team}").replacement(team != null ? team : "The egg holder")));
+                }
             } else {
-                player.sendMessage(Component.text("  Time remaining: ", NamedTextColor.YELLOW)
-                    .append(Component.text(String.format("%d:%02d", minutes, seconds), NamedTextColor.GOLD)));
+                // This team still needs to survive - show time remaining
+                if (team != null) {
+                    player.sendMessage(lang.getComponent("endfight.team-time-remaining")
+                        .replaceText(builder -> builder.matchLiteral("{team}").replacement(team))
+                        .replaceText(builder -> builder.matchLiteral("{time}").replacement(String.format("%d:%02d", minutes, seconds))));
+                } else {
+                    player.sendMessage(lang.getComponent("endfight.objective-time-remaining")
+                        .replaceText(builder -> builder.matchLiteral("{time}").replacement(String.format("%d:%02d", minutes, seconds))));
+                }
+                
+                // Show objective for the egg holder
+                if (player.getUniqueId().equals(newHolder.getUniqueId())) {
+                    player.sendMessage(Component.text(""));
+                    player.sendMessage(lang.getComponent("endfight.objective-survive-time")
+                        .replaceText(builder -> builder.matchLiteral("{time}").replacement(String.format("%d:%02d", minutes, seconds))));
+                }
             }
+            
             player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.LIGHT_PURPLE));
             player.sendMessage(Component.text(""));
             

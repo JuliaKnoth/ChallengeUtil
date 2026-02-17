@@ -44,7 +44,7 @@ public class HostControlItemListener implements Listener {
             return;
         }
         
-        plugin.getLogger().info("Player " + player.getName() + " has host permission, scheduling item give...");
+        plugin.logDebug("Player " + player.getName() + " has host permission, scheduling item give...");
         
         // Delay to ensure inventory is fully loaded and all other join logic has completed
         // This runs after PlayerJoinListener (which runs at 5L), so we use 20L to be safe
@@ -75,12 +75,12 @@ public class HostControlItemListener implements Listener {
         event.setCancelled(true);
         
         // Debug logging
-        plugin.getLogger().info("Host control item clicked by " + player.getName());
+        plugin.logDebug("Host control item clicked by " + player.getName());
         
         // Check permission
         if (!player.hasPermission("challenge.host")) {
             player.sendMessage(lang.getComponent("host.no-permission-item"));
-            plugin.getLogger().warning(player.getName() + " tried to use host control without permission!");
+            plugin.logWarning(player.getName() + " tried to use host control without permission!");
             return;
         }
         
@@ -92,7 +92,7 @@ public class HostControlItemListener implements Listener {
         }
         
         // Open the host control GUI
-        plugin.getLogger().info("Opening host control GUI for " + player.getName());
+        plugin.logDebug("Opening host control GUI for " + player.getName());
         HostControlGUI gui = new HostControlGUI(plugin);
         gui.open(player);
     }
@@ -104,16 +104,16 @@ public class HostControlItemListener implements Listener {
         // Check if player is in waiting room
         String waitingRoomName = plugin.getConfig().getString("world.waiting-room", "waiting_room");
         if (!player.getWorld().getName().equals(waitingRoomName)) {
-            plugin.getLogger().info("Not giving host item to " + player.getName() + " - not in waiting room (current world: " + player.getWorld().getName() + ", expected: " + waitingRoomName + ")");
+            plugin.logDebug("Not giving host item to " + player.getName() + " - not in waiting room (current world: " + player.getWorld().getName() + ", expected: " + waitingRoomName + ")");
             return; // Only give item in waiting room
         }
         
-        plugin.getLogger().info("Giving host control item to " + player.getName() + " in world " + player.getWorld().getName());
+        plugin.logDebug("Giving host control item to " + player.getName() + " in world " + player.getWorld().getName());
         
         // Check if player already has the item in slot 8
         ItemStack slot8Item = player.getInventory().getItem(8);
         if (isHostControlItem(slot8Item)) {
-            plugin.getLogger().info(player.getName() + " already has the host control item in slot 8");
+            plugin.logDebug(player.getName() + " already has the host control item in slot 8");
             return; // Player already has the item in the correct slot
         }
         
@@ -127,7 +127,7 @@ public class HostControlItemListener implements Listener {
         // Give the item in slot 8 (last hotbar slot)
         ItemStack hostItem = HostControlGUI.createHostControlItem(plugin);
         player.getInventory().setItem(8, hostItem);
-        plugin.getLogger().info("Successfully gave host control item to " + player.getName());
+        plugin.logDebug("Successfully gave host control item to " + player.getName());
     }
     
     /**

@@ -590,7 +590,7 @@ public class SettingsGUIListener implements Listener {
             // Row 0: Team Modes (top row)
             case 1: challengeName = "manhunt_mode"; break;
             case 2: challengeName = "team_race_mode"; break;
-            case 3: challengeName = "custom_end_fight"; break;
+            // case 3 is intentionally skipped - custom_end_fight is now auto-managed
             
             // Row 2: RNG based stuff
             case 19: challengeName = "chunk_items"; break;
@@ -698,30 +698,31 @@ public class SettingsGUIListener implements Listener {
                 // Reset teams when switching to Team Race mode
                 plugin.getDataManager().clearTeams();
                 player.sendMessage(lang.getComponent("settings.teams-reset"));
+                
+                // Automatically enable custom_end_fight when team race is enabled
+                plugin.getDataManager().saveChallenge("custom_end_fight", true);
             }
         } else {
             // When disabling a mode, also reset teams
             if (challengeName.equals("manhunt_mode") || challengeName.equals("team_race_mode")) {
                 plugin.getDataManager().clearTeams();
                 player.sendMessage(lang.getComponent("settings.teams-reset"));
+                
+                // Automatically disable custom_end_fight when team race is disabled
+                if (challengeName.equals("team_race_mode")) {
+                    plugin.getDataManager().saveChallenge("custom_end_fight", false);
+                }
             }
         }
         
         // Save persistently
         plugin.getDataManager().saveChallenge(challengeName, newValue);
         
-        // Special hidden message for custom_end_fight
-        if (challengeName.equals("custom_end_fight")) {
-            player.sendMessage(net.kyori.adventure.text.Component.text("Custom End Fight: ", net.kyori.adventure.text.format.NamedTextColor.GRAY)
-                .append(net.kyori.adventure.text.Component.text(newValue ? "ON" : "OFF", 
-                    newValue ? net.kyori.adventure.text.format.NamedTextColor.GREEN : net.kyori.adventure.text.format.NamedTextColor.RED)));
-        } else {
-            Map<String, String> placeholders = new HashMap<>();
-            placeholders.put("challenge", formatChallengeName(challengeName));
-            placeholders.put("status", newValue ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"));
-            player.sendMessage(lang.getComponent("settings.challenge-toggled", placeholders));
-            player.sendMessage(lang.getComponent("settings.challenge-saved"));
-        }
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("challenge", formatChallengeName(challengeName));
+        placeholders.put("status", newValue ? lang.getMessage("common.enabled") : lang.getMessage("common.disabled"));
+        player.sendMessage(lang.getComponent("settings.challenge-toggled", placeholders));
+        player.sendMessage(lang.getComponent("settings.challenge-saved"));
         
         // Refresh GUI
         SettingsGUI gui = new SettingsGUI(plugin);

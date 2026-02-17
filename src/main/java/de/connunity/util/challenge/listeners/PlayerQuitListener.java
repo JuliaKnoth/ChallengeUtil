@@ -21,12 +21,12 @@ public class PlayerQuitListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         // Player cleanup on quit
-        plugin.getLogger().info(event.getPlayer().getName() + " left the server");
+        plugin.logDebug(event.getPlayer().getName() + " left the server");
     }
     
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerKick(PlayerKickEvent event) {
         // Player cleanup on kick
-        plugin.getLogger().info(event.getPlayer().getName() + " was kicked from the server");
+        plugin.logDebug(event.getPlayer().getName() + " was kicked from the server");
     }
 }

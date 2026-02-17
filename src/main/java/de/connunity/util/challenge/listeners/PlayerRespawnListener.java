@@ -32,17 +32,6 @@ public class PlayerRespawnListener implements Listener {
         World deathWorld = player.getWorld();
         String deathWorldName = deathWorld.getName();
         
-        // Check if custom end fight is active with an egg holder - respawn in the End
-        if (plugin.getCustomEndFightManager().isActive() && 
-            plugin.getCustomEndFightManager().getEggHolder() != null) {
-            Location endSpawn = plugin.getCustomEndFightManager().getEndSpawnLocation();
-            if (endSpawn != null) {
-                event.setRespawnLocation(endSpawn);
-                plugin.getLogger().info("Player " + player.getName() + " respawning in the End (custom end fight active)");
-                return;
-            }
-        }
-        
         // Check if manhunt mode is enabled and timer is running
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         boolean isTimerRunning = plugin.getTimerManager().isRunning();
@@ -58,14 +47,14 @@ public class PlayerRespawnListener implements Listener {
                 if (player.getBedSpawnLocation() != null) {
                     Location bedSpawn = player.getBedSpawnLocation();
                     event.setRespawnLocation(bedSpawn);
-                    plugin.getLogger().info("Hunter " + player.getName() + " respawning at bed spawn");
+                    plugin.logDebug("Hunter " + player.getName() + " respawning at bed spawn");
                     return;
                 } else {
                     World speedrunWorld = Bukkit.getWorld(speedrunWorldName);
                     if (speedrunWorld != null) {
                         Location respawnLocation = speedrunWorld.getSpawnLocation();
                         event.setRespawnLocation(respawnLocation);
-                        plugin.getLogger().info("Hunter " + player.getName() + " respawning at speedrun spawn (no bed)");
+                        plugin.logDebug("Hunter " + player.getName() + " respawning at speedrun spawn (no bed)");
                         return;
                     }
                 }
@@ -88,7 +77,7 @@ public class PlayerRespawnListener implements Listener {
         if (allowRespawn && player.getBedSpawnLocation() != null) {
             Location bedSpawn = player.getBedSpawnLocation();
             event.setRespawnLocation(bedSpawn);
-            plugin.getLogger().info("Player " + player.getName() + " respawning at bed spawn");
+            plugin.logDebug("Player " + player.getName() + " respawning at bed spawn");
             return;
         }
         
@@ -104,7 +93,7 @@ public class PlayerRespawnListener implements Listener {
             if (speedrunWorld != null) {
                 Location respawnLocation = speedrunWorld.getSpawnLocation();
                 event.setRespawnLocation(respawnLocation);
-                plugin.getLogger().info("Player " + player.getName() + " died in speedrun dimension (" + deathWorldName + "), respawning at speedrun spawn");
+                plugin.logDebug("Player " + player.getName() + " died in speedrun dimension (" + deathWorldName + "), respawning at speedrun spawn");
             }
         }
         // If player died in waiting room, respawn them in waiting room
@@ -126,7 +115,7 @@ public class PlayerRespawnListener implements Listener {
                     player.setGameMode(org.bukkit.GameMode.ADVENTURE);
                 }, 1L);
                 
-                plugin.getLogger().info("Player " + player.getName() + " died in waiting room, respawning at waiting room spawn");
+                plugin.logDebug("Player " + player.getName() + " died in waiting room, respawning at waiting room spawn");
             }
         }
     }

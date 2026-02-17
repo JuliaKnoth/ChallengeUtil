@@ -160,7 +160,7 @@ public class WaitingRoomListener implements Listener {
                     event.getEntity().remove();
                 }
             }, 100L);
-            plugin.getLogger().fine("Item spawned in waiting room (will be removed after 5s): " + event.getEntity().getItemStack().getType());
+            plugin.logDebug("Item spawned in waiting room (will be removed after 5s): " + event.getEntity().getItemStack().getType());
         }
     }
     
@@ -171,7 +171,7 @@ public class WaitingRoomListener implements Listener {
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         if (event.getEntity().getWorld().getName().equals(waitingRoomName)) {
             event.setCancelled(true);
-            plugin.getLogger().fine("Prevented creature spawn in waiting room: " + event.getEntityType());
+            plugin.logDebug("Prevented creature spawn in waiting room: " + event.getEntityType());
         }
     }
     
@@ -186,7 +186,7 @@ public class WaitingRoomListener implements Listener {
         // Only allow players, remove all other entities
         if (!(entity instanceof Player) && entity.getWorld().getName().equals(waitingRoomName)) {
             event.setCancelled(true);
-            plugin.getLogger().fine("Prevented entity spawn in waiting room: " + event.getEntityType());
+            plugin.logDebug("Prevented entity spawn in waiting room: " + event.getEntityType());
         }
     }
     
@@ -198,7 +198,7 @@ public class WaitingRoomListener implements Listener {
     public void onWorldLoad(WorldLoadEvent event) {
         if (event.getWorld().getName().equals(waitingRoomName)) {
             event.getWorld().setKeepSpawnInMemory(false);
-            plugin.getLogger().info("Disabled spawn chunk loading for waiting room: " + waitingRoomName);
+            plugin.logDebug("Disabled spawn chunk loading for waiting room: " + waitingRoomName);
         }
     }
     
@@ -229,7 +229,7 @@ public class WaitingRoomListener implements Listener {
         player.setSaturation(20.0f);
         player.setExhaustion(0.0f);
         
-        plugin.getLogger().info("Applied waiting room state to player: " + player.getName());
+        plugin.logDebug("Applied waiting room state to player: " + player.getName());
     }
 
     // Minimum Y coordinate allowed in the waiting room; falling below this kills the player

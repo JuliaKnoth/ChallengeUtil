@@ -134,7 +134,7 @@ public class BlockBreakRandomizerListener implements Listener {
                 Material material = Material.valueOf(itemName.toUpperCase());
                 excluded.add(material);
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid material in block_break_randomizer.excluded: " + itemName);
+                plugin.logWarning("Invalid material in block_break_randomizer.excluded: " + itemName);
             }
         }
         
@@ -175,7 +175,7 @@ public class BlockBreakRandomizerListener implements Listener {
             }
         }
         
-        plugin.getLogger().info("Block Break Randomizer: Initialized " + validItems.size() + " valid items");
+        plugin.logDebug("Block Break Randomizer: Initialized " + validItems.size() + " valid items");
     }
     
     /**

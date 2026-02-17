@@ -264,7 +264,7 @@ public class StartCommand implements CommandExecutor {
         for (Player player : Bukkit.getOnlinePlayers()) {
             resetPlayer(player);
         }
-        plugin.getLogger().info("Reset all players for game start");
+        plugin.logDebug("Reset all players for game start");
         
         // Start 5-second countdown for all players
         startCountdown();

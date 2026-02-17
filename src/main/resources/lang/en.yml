@@ -661,7 +661,7 @@ gui:
       
       custom_end_fight: "Chase the Egg - Custom End Fight"
       custom_end_fight_hint1: "<aqua><italic>Dragon egg must be collected"
-      custom_end_fight_hint2: "<gray><italic>Egg holder becomes boss with 500 HP"
+      custom_end_fight_hint2: "<gray><italic>Egg holder becomes boss with 40 HP"
       custom_end_fight_hint3: "<gold><italic>All others hunt the egg holder"
       
       team_race_mode: "Manhunt Race - 2-10 Teams"
@@ -713,13 +713,27 @@ endfight:
   chase-egg-subtitle: "<yellow>Collect the Dragon Egg to become the boss!"
   boss-bar-title: "<light_purple><bold>🥚 {player}"
   you-are-boss: "<light_purple><bold>⚡ YOU ARE THE EGG HOLDER!"
-  survive-instructions: "<yellow>  Survive with 200 HP! All others are hunting you!"
+  survive-instructions: "<yellow>  Survive with 40 HP! All others are hunting you!"
   defeat-boss: "<gold><bold>⚔ DEFEAT {player}!"
   team-won: "<gold><bold>✓ TEAM {team} WON!"
+  team-won-subtitle: "<yellow>They held the egg for 10 minutes!"
+  team-escaped: "<yellow>They escaped to the Overworld with the Dragon Egg!"
   new-holder: "<light_purple><bold>⚡ {player} is now the Egg Holder!"
   team-time-remaining: "<yellow>  Team {team} needs to survive for {time} more!"
+  egg-respawned: "<light_purple><bold>🥚 The Dragon Egg has respawned"
   cannot-drop-egg: "<red>✗ You cannot drop the Dragon Egg!"
   cannot-place-egg: "<red>✗ You cannot place the Dragon Egg!"
+  
+  # Portal unlock messages
+  portal-unlocked-title: "<yellow><bold>⏱ TIME'S UP!"
+  portal-unlocked-subtitle: "<green>The End Portal has been unlocked!"
+  portal-team-can-escape: "<gray>  <aqua>{team}<gray> can now escape to the Overworld to win!"
+  
+  # Objectives
+  objective-extract-egg: "<gold><bold>📍 YOUR OBJECTIVE: <yellow>Extract the egg from the End!"
+  objective-survive-time: "<gold><bold>📍 YOUR OBJECTIVE: <yellow>Survive for <gold>{time}<yellow> to unlock the portal!"
+  objective-team-must-extract: "<aqua>  {team}<yellow> must extract the egg to win!"
+  objective-time-remaining: "<yellow>  Time remaining: <gold>{time}"
 
 
 

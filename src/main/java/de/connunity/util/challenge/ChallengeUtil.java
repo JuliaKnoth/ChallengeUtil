@@ -9,6 +9,7 @@ import de.connunity.util.challenge.listeners.CompassProtectionListener;
 import de.connunity.util.challenge.listeners.CompassTrackingListener;
 import de.connunity.util.challenge.listeners.ChunkItemChallengeListener;
 import de.connunity.util.challenge.listeners.DragonEggPickupListener;
+import de.connunity.util.challenge.listeners.EggHolderEscapeListener;
 import de.connunity.util.challenge.listeners.EggHolderRegenerationListener;
 import de.connunity.util.challenge.listeners.EndFightDamageListener;
 import de.connunity.util.challenge.listeners.EnderDragonDeathListener;
@@ -72,6 +73,39 @@ public class ChallengeUtil extends JavaPlugin {
     private boolean resetInProgress = false;
     private final Set<String> playersToReset = new HashSet<>();
 
+    /**
+     * Log a debug message that respects the reduced-debug-info config setting.
+     * When reduced-debug-info is true (default), these messages are suppressed.
+     * Use logInfo() for important messages that should always be displayed.
+     * 
+     * @param message The debug message to log
+     */
+    public void logDebug(String message) {
+        if (!getConfig().getBoolean("debug.reduced-debug-info", true)) {
+            getLogger().info("[DEBUG] " + message);
+        }
+    }
+
+    /**
+     * Log an important informational message that is always displayed regardless
+     * of the reduced-debug-info setting. Use this for: seed info, world creation
+     * status, update notifications, spawn finding, load confirmations, etc.
+     * 
+     * @param message The important message to log
+     */
+    public void logInfo(String message) {
+        getLogger().info(message);
+    }
+
+    /**
+     * Log a warning message. Warnings are always displayed.
+     * 
+     * @param message The warning message to log
+     */
+    public void logWarning(String message) {
+        getLogger().warning(message);
+    }
+
     @Override
     public void onEnable() {
         // Save default config
@@ -109,9 +143,9 @@ public class ChallengeUtil extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             placeholderAPIExpansion = new PlaceholderAPIExpansion(this);
             placeholderAPIExpansion.register();
-            getLogger().info("PlaceholderAPI expansion registered! Use %ch_prefix% and %ch_suffix%");
+            logDebug("PlaceholderAPI expansion registered! Use %ch_prefix% and %ch_suffix%");
         } else {
-            getLogger().warning("PlaceholderAPI not found! Team prefixes will not work in chat.");
+            logWarning("PlaceholderAPI not found! Team prefixes will not work in chat.");
         }
 
         // Initialize chunk item challenge listener
@@ -152,6 +186,7 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DragonEggPickupListener(this, customEndFightManager), this);
         getServer().getPluginManager().registerEvents(new EndFightDamageListener(this, customEndFightManager), this);
         getServer().getPluginManager().registerEvents(new EggHolderRegenerationListener(this, customEndFightManager), this);
+        getServer().getPluginManager().registerEvents(new EggHolderEscapeListener(this, customEndFightManager), this);
         getServer().getPluginManager().registerEvents(new EndPortalPreventionListener(this, customEndFightManager), this);
         getServer().getPluginManager().registerEvents(new EndermanSpawnPreventionListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceTeamListener(this), this);
@@ -191,19 +226,19 @@ public class ChallengeUtil extends JavaPlugin {
             // Check 3 seconds after startup to avoid startup lag
             Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> versionChecker.notifyIfUpdateAvailable(), 60L);
         } else {
-            getLogger().info("Update checker is disabled in config.yml");
+            logDebug("Update checker is disabled in config.yml");
         }
 
         // Perform full reset on server startup (after all initialization is complete)
         if (getConfig().getBoolean("reset.fullreset-on-startup", false)) {
             Bukkit.getScheduler().runTaskLater(this, () -> {
-                getLogger().info("Performing full reset on server startup...");
+                logInfo("Performing full reset on server startup...");
                 fullResetCommand.performHolodeckReset("SERVER_STARTUP");
             }, 100L); // 5 seconds delay to ensure all worlds and plugins are fully loaded
         }
 
-        getLogger().info("ChallengeUtil has been enabled!");
-        getLogger().info("Holodeck Reset System active!");
+        logInfo("ChallengeUtil has been enabled!");
+        logDebug("Holodeck Reset System active!");
 
     }
 
@@ -217,7 +252,7 @@ public class ChallengeUtil extends JavaPlugin {
         // Unregister plugin messaging channel
         getServer().getMessenger().unregisterOutgoingPluginChannel(this, "BungeeCord");
 
-        getLogger().info("ChallengeUtil has been disabled!");
+        logInfo("ChallengeUtil has been disabled!");
     }
 
     public TimerManager getTimerManager() {
@@ -304,20 +339,20 @@ public class ChallengeUtil extends JavaPlugin {
         World speedrunWorld = Bukkit.getWorld(speedrunWorldName);
 
         if (speedrunWorld != null) {
-            getLogger().info("Speedrun world '" + speedrunWorldName + "' is already loaded.");
+            logDebug("Speedrun world '" + speedrunWorldName + "' is already loaded.");
             return;
         }
 
         // Check if the world folder exists on disk
         File worldFolder = new File(Bukkit.getWorldContainer(), speedrunWorldName);
         if (!worldFolder.exists() || !worldFolder.isDirectory()) {
-            getLogger().info("Speedrun world '" + speedrunWorldName
+            logDebug("Speedrun world '" + speedrunWorldName
                     + "' does not exist on disk. Will be created on first /fullreset.");
             return;
         }
 
         // World exists on disk but isn't loaded - load it now
-        getLogger().info("Found speedrun world '" + speedrunWorldName + "' on disk. Loading...");
+        logDebug("Found speedrun world '" + speedrunWorldName + "' on disk. Loading...");
 
         try {
             // Create world with default settings
@@ -333,21 +368,21 @@ public class ChallengeUtil extends JavaPlugin {
             World loadedWorld = creator.createWorld();
 
             if (loadedWorld != null) {
-                getLogger().info("Successfully loaded speedrun world '" + speedrunWorldName + "'!");
+                logInfo("Successfully loaded speedrun world '" + speedrunWorldName + "'!");
 
                 // Load Nether and End dimensions too
                 WorldCreator netherCreator = new WorldCreator(speedrunWorldName + "_nether");
                 netherCreator.environment(World.Environment.NETHER);
                 World netherWorld = netherCreator.createWorld();
                 if (netherWorld != null) {
-                    getLogger().info("Successfully loaded Nether dimension!");
+                    logInfo("Successfully loaded Nether dimension!");
                 }
 
                 WorldCreator endCreator = new WorldCreator(speedrunWorldName + "_the_end");
                 endCreator.environment(World.Environment.THE_END);
                 World endWorld = endCreator.createWorld();
                 if (endWorld != null) {
-                    getLogger().info("Successfully loaded End dimension!");
+                    logInfo("Successfully loaded End dimension!");
                 }
 
                 // Disable spawn chunk loading to prevent lag
@@ -357,10 +392,10 @@ public class ChallengeUtil extends JavaPlugin {
                 if (endWorld != null)
                     endWorld.setKeepSpawnInMemory(false);
             } else {
-                getLogger().warning("Failed to load speedrun world '" + speedrunWorldName + "'!");
+                logWarning("Failed to load speedrun world '" + speedrunWorldName + "'!");
             }
         } catch (Exception e) {
-            getLogger().severe("Error loading speedrun world: " + e.getMessage());
+            logWarning("Error loading speedrun world: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -373,8 +408,8 @@ public class ChallengeUtil extends JavaPlugin {
         World waitingRoom = Bukkit.getWorld(waitingRoomName);
 
         if (waitingRoom == null) {
-            getLogger().warning("Waiting room '" + waitingRoomName + "' not found. Gamerules not applied.");
-            getLogger().warning("The waiting room will be configured when it's created.");
+            logWarning("Waiting room '" + waitingRoomName + "' not found. Gamerules not applied.");
+            logWarning("The waiting room will be configured when it's created.");
             return;
         }
 
@@ -389,7 +424,7 @@ public class ChallengeUtil extends JavaPlugin {
         World speedrunWorld = Bukkit.getWorld(speedrunWorldName);
 
         if (speedrunWorld == null) {
-            getLogger().info("Speedrun world '" + speedrunWorldName
+            logDebug("Speedrun world '" + speedrunWorldName
                     + "' not found on startup. Gamerules will be applied when world is created.");
             return;
         }
@@ -412,9 +447,9 @@ public class ChallengeUtil extends JavaPlugin {
         java.util.Set<String> savedGameruleNames = dataManager.getSavedGameruleNames();
 
         if (savedGameruleNames.isEmpty()) {
-            getLogger().info("No saved gamerules found for " + world.getName() + " - using Minecraft defaults");
+            logDebug("No saved gamerules found for " + world.getName() + " - using Minecraft defaults");
         } else {
-            getLogger().info("Applying " + savedGameruleNames.size() + " saved gamerules to " + world.getName());
+            logDebug("Applying " + savedGameruleNames.size() + " saved gamerules to " + world.getName());
 
             int applied = 0;
             for (String gameruleName : savedGameruleNames) {
@@ -422,7 +457,7 @@ public class ChallengeUtil extends JavaPlugin {
                 GameRule<?> gameRule = GameRule.getByName(gameruleName);
 
                 if (gameRule == null) {
-                    getLogger().warning("Unknown gamerule: " + gameruleName);
+                    logWarning("Unknown gamerule: " + gameruleName);
                     continue;
                 }
 
@@ -439,11 +474,11 @@ public class ChallengeUtil extends JavaPlugin {
                         applied++;
                     }
                 } catch (Exception e) {
-                    getLogger().warning("Failed to apply gamerule " + gameruleName + ": " + e.getMessage());
+                    logWarning("Failed to apply gamerule " + gameruleName + ": " + e.getMessage());
                 }
             }
 
-            getLogger().info("Applied " + applied + " saved gamerules to " + world.getName());
+            logDebug("Applied " + applied + " saved gamerules to " + world.getName());
         }
 
         // Always set spectators_generate_chunks to false (not user-configurable)
@@ -453,10 +488,10 @@ public class ChallengeUtil extends JavaPlugin {
                 @SuppressWarnings("unchecked")
                 GameRule<Boolean> boolRule = (GameRule<Boolean>) spectatorsRule;
                 world.setGameRule(boolRule, false);
-                getLogger().info("Set spectators_generate_chunks to false for " + world.getName());
+                logDebug("Set spectators_generate_chunks to false for " + world.getName());
             }
         } catch (Exception e) {
-            getLogger().warning("Failed to set spectators_generate_chunks: " + e.getMessage());
+            logWarning("Failed to set spectators_generate_chunks: " + e.getMessage());
         }
     }
 
@@ -467,11 +502,11 @@ public class ChallengeUtil extends JavaPlugin {
         String gamerulePath = "world.gamerules." + configPath;
 
         if (!getConfig().contains(gamerulePath)) {
-            getLogger().info("No gamerules configured for: " + configPath);
+            logDebug("No gamerules configured for: " + configPath);
             return;
         }
 
-        getLogger().info("Applying gamerules to world: " + world.getName());
+        logDebug("Applying gamerules to world: " + world.getName());
 
         ConfigurationSection gamerules = getConfig().getConfigurationSection(gamerulePath);
         if (gamerules == null)
@@ -484,7 +519,7 @@ public class ChallengeUtil extends JavaPlugin {
                 GameRule<?> gameRule = GameRule.getByName(key);
 
                 if (gameRule == null) {
-                    getLogger().warning("Unknown gamerule: " + key);
+                    logWarning("Unknown gamerule: " + key);
                     continue;
                 }
 
@@ -502,11 +537,11 @@ public class ChallengeUtil extends JavaPlugin {
                 }
 
             } catch (Exception e) {
-                getLogger().warning("Failed to apply gamerule '" + key + "': " + e.getMessage());
+                logWarning("Failed to apply gamerule '" + key + "': " + e.getMessage());
             }
         }
 
-        getLogger().info("Applied " + applied + " gamerules to " + world.getName());
+        logDebug("Applied " + applied + " gamerules to " + world.getName());
     }
 
     /**
@@ -518,13 +553,13 @@ public class ChallengeUtil extends JavaPlugin {
         World speedrunWorld = Bukkit.getWorld(speedrunWorldName);
 
         if (speedrunWorld == null) {
-            getLogger().info("Speedrun world '" + speedrunWorldName
+            logDebug("Speedrun world '" + speedrunWorldName
                     + "' not found on startup. Will be configured when created.");
             return;
         }
 
         Location currentSpawn = speedrunWorld.getSpawnLocation();
-        getLogger().info("Checking speedrun world spawn safety at Y=" + currentSpawn.getBlockY());
+        logDebug("Checking speedrun world spawn safety at Y=" + currentSpawn.getBlockY());
 
         // Check if the current spawn is safe (solid ground below, air above)
         Location groundCheck = currentSpawn.clone().subtract(0, 1, 0);
@@ -534,25 +569,25 @@ public class ChallengeUtil extends JavaPlugin {
 
         // Check if spawn is in the air or on unsafe blocks
         if (!groundMaterial.isSolid() || isUnsafeSpawnMaterial(groundMaterial)) {
-            getLogger().warning("Current spawn point is unsafe! Ground material: " + groundMaterial);
+            logWarning("Current spawn point is unsafe! Ground material: " + groundMaterial);
             needsAdjustment = true;
         }
 
         // Check if spawn Y is suspiciously high (common when spawn chunks haven't
         // generated)
         if (currentSpawn.getBlockY() > 200) {
-            getLogger().warning("Spawn point is too high (Y=" + currentSpawn.getBlockY() + ")");
+            logWarning("Spawn point is too high (Y=" + currentSpawn.getBlockY() + ")");
             needsAdjustment = true;
         }
 
         if (needsAdjustment) {
-            getLogger().info("Finding safe spawn location...");
+            logInfo("Finding safe spawn location...");
             Location safeSpawn = findSafeSpawn(speedrunWorld, currentSpawn);
             speedrunWorld.setSpawnLocation(safeSpawn);
-            getLogger().info("✓ Set safe spawn at X=" + safeSpawn.getBlockX() + " Y=" + safeSpawn.getBlockY() + " Z="
+            logInfo("✓ Set safe spawn at X=" + safeSpawn.getBlockX() + " Y=" + safeSpawn.getBlockY() + " Z="
                     + safeSpawn.getBlockZ());
         } else {
-            getLogger().info("✓ Speedrun world spawn is safe at Y=" + currentSpawn.getBlockY());
+            logInfo("✓ Speedrun world spawn is safe at Y=" + currentSpawn.getBlockY());
         }
     }
 
@@ -595,7 +630,7 @@ public class ChallengeUtil extends JavaPlugin {
         Location fallback = new Location(world, x + 0.5, surfaceY + 1, z + 0.5);
         fallback.setPitch(0);
         fallback.setYaw(0);
-        getLogger().warning("Could not find ideal safe spawn, using fallback at Y=" + surfaceY);
+        logWarning("Could not find ideal safe spawn, using fallback at Y=" + surfaceY);
         return fallback;
     }
 
@@ -622,7 +657,7 @@ public class ChallengeUtil extends JavaPlugin {
     private void optimizeWorldSettings() {
         for (World world : Bukkit.getWorlds()) {
             world.setKeepSpawnInMemory(false);
-            getLogger().info("Disabled spawn chunk loading for: " + world.getName());
+            logDebug("Disabled spawn chunk loading for: " + world.getName());
         }
     }
 
@@ -641,8 +676,8 @@ public class ChallengeUtil extends JavaPlugin {
                 String seedStr = lines.get(0).trim();
                 long seed = Long.parseLong(seedStr);
 
-                getLogger().info("Found pending seed: " + seed);
-                getLogger().info("Applying seed to server.properties...");
+                logInfo("Found pending seed: " + seed);
+                logInfo("Applying seed to server.properties...");
 
                 // Update server.properties
                 File serverProperties = new File("server.properties");
@@ -655,7 +690,7 @@ public class ChallengeUtil extends JavaPlugin {
                         if (line.startsWith("level-seed=")) {
                             newLines.add("level-seed=" + seed);
                             seedFound = true;
-                            getLogger().info("Updated level-seed in server.properties");
+                            logInfo("Updated level-seed in server.properties");
                         } else {
                             newLines.add(line);
                         }
@@ -663,19 +698,19 @@ public class ChallengeUtil extends JavaPlugin {
 
                     if (!seedFound) {
                         newLines.add("level-seed=" + seed);
-                        getLogger().info("Added level-seed to server.properties");
+                        logInfo("Added level-seed to server.properties");
                     }
 
                     Files.write(serverProperties.toPath(), newLines);
-                    getLogger().info("server.properties updated with new seed!");
+                    logInfo("server.properties updated with new seed!");
                 }
 
                 // Delete the pending seed file
                 seedFile.delete();
-                getLogger().info("Pending seed file removed.");
+                logInfo("Pending seed file removed.");
 
             } catch (Exception e) {
-                getLogger().severe("Failed to apply pending seed: " + e.getMessage());
+                logWarning("Failed to apply pending seed: " + e.getMessage());
                 e.printStackTrace();
             }
         }

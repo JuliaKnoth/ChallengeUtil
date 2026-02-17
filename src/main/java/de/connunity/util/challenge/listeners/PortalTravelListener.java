@@ -58,8 +58,8 @@ public class PortalTravelListener implements Listener {
                 targetWorld = Bukkit.getWorld(netherWorldName);
                 
                 if (targetWorld == null) {
-                    plugin.getLogger().warning("Nether world not found: " + netherWorldName);
-                    plugin.getLogger().warning("Creating it now...");
+                    plugin.logWarning("Nether world not found: " + netherWorldName);
+                    plugin.logWarning("Creating it now...");
                     // This shouldn't happen if FullResetCommand works correctly
                     return;
                 }
@@ -69,7 +69,7 @@ public class PortalTravelListener implements Listener {
                 targetWorld = Bukkit.getWorld(speedrunWorldName);
                 
                 if (targetWorld == null) {
-                    plugin.getLogger().warning("Speedrun world not found: " + speedrunWorldName);
+                    plugin.logWarning("Speedrun world not found: " + speedrunWorldName);
                     return;
                 }
                 
@@ -100,7 +100,7 @@ public class PortalTravelListener implements Listener {
             // OPTIMIZATION: Pre-load chunks at destination to prevent lag
             preloadChunksAsync(targetWorld, to, event.getPlayer());
             
-            plugin.getLogger().info(event.getPlayer().getName() + " traveling through Nether portal to " + targetWorld.getName());
+            plugin.logDebug(event.getPlayer().getName() + " traveling through Nether portal to " + targetWorld.getName());
         }
         
         // Handle End portal
@@ -113,8 +113,8 @@ public class PortalTravelListener implements Listener {
                 targetWorld = Bukkit.getWorld(endWorldName);
                 
                 if (targetWorld == null) {
-                    plugin.getLogger().warning("End world not found: " + endWorldName);
-                    plugin.getLogger().warning("Creating it now...");
+                    plugin.logWarning("End world not found: " + endWorldName);
+                    plugin.logWarning("Creating it now...");
                     return;
                 }
                 
@@ -134,25 +134,75 @@ public class PortalTravelListener implements Listener {
                 
             } else if (fromWorld.getEnvironment() == World.Environment.THE_END) {
                 // Going from End to Overworld (return portal after dragon)
-                targetWorld = Bukkit.getWorld(speedrunWorldName);
+                Player player = event.getPlayer();
                 
-                if (targetWorld == null) {
-                    plugin.getLogger().warning("Speedrun world not found: " + speedrunWorldName);
-                    return;
+                // Check if this is the egg holder escaping during custom end fight
+                if (plugin.getCustomEndFightManager().isActive() && 
+                    plugin.getCustomEndFightManager().getEggHolder() != null &&
+                    plugin.getCustomEndFightManager().getEggHolder().getUniqueId().equals(player.getUniqueId())) {
+                    
+                    // Egg holder is escaping to overworld - they win!
+                    targetWorld = Bukkit.getWorld(speedrunWorldName);
+                    
+                    if (targetWorld == null) {
+                        plugin.logWarning("Speedrun world not found: " + speedrunWorldName);
+                        return;
+                    }
+                    
+                    // Teleport to world spawn
+                    Location to = targetWorld.getSpawnLocation();
+                    event.setTo(to);
+                    
+                    // OPTIMIZATION: Pre-load spawn chunks
+                    preloadChunksAsync(targetWorld, to, player);
+                    
+                    // Trigger the win condition (delayed to ensure player arrives safely)
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        plugin.getCustomEndFightManager().onEggHolderEscapedToOverworld();
+                    }, 20L); // 1 second delay
+                    
+                    plugin.logInfo(player.getName() + " (egg holder) escaped to Overworld - team wins!");
+                    
+                } else if (plugin.getCustomEndFightManager().isActive() && plugin.getCustomEndFightManager().isEggCollected()) {
+                    // Non-egg holder trying to escape during end fight - allow it but game continues
+                    targetWorld = Bukkit.getWorld(speedrunWorldName);
+                    
+                    if (targetWorld == null) {
+                        plugin.logWarning("Speedrun world not found: " + speedrunWorldName);
+                        return;
+                    }
+                    
+                    // Teleport to world spawn
+                    Location to = targetWorld.getSpawnLocation();
+                    event.setTo(to);
+                    
+                    // OPTIMIZATION: Pre-load spawn chunks
+                    preloadChunksAsync(targetWorld, to, player);
+                    
+                    plugin.logDebug(player.getName() + " escaped to Overworld (not egg holder, game continues)");
+                    
+                } else {
+                    // Normal end portal behavior (not during custom end fight)
+                    targetWorld = Bukkit.getWorld(speedrunWorldName);
+                    
+                    if (targetWorld == null) {
+                        plugin.logWarning("Speedrun world not found: " + speedrunWorldName);
+                        return;
+                    }
+                    
+                    // Teleport to world spawn
+                    Location to = targetWorld.getSpawnLocation();
+                    event.setTo(to);
+                    
+                    // OPTIMIZATION: Pre-load spawn chunks
+                    preloadChunksAsync(targetWorld, to, player);
                 }
-                
-                // Teleport to world spawn
-                Location to = targetWorld.getSpawnLocation();
-                event.setTo(to);
-                
-                // OPTIMIZATION: Pre-load spawn chunks
-                preloadChunksAsync(targetWorld, to, event.getPlayer());
                 
             } else {
                 return; // Shouldn't happen
             }
             
-            plugin.getLogger().info(event.getPlayer().getName() + " traveling through End portal to " + targetWorld.getName());
+            plugin.logDebug(event.getPlayer().getName() + " traveling through End portal to " + targetWorld.getName());
         }
     }
     
