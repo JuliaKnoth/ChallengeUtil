@@ -38,6 +38,11 @@ commands:
     description: Tritt einem Team bei (Manhunt oder Manhunt Race Modus)
     usage: /<command> <runner|hunter|spectator|Teamname>
     permission: challenge.team
+  spectator:
+    description: Werde Zuschauer in Connunity Hunt Modus (nur für Hosts)
+    aliases: [spec, watch]
+    usage: /<command>
+    permission: challenge.host
 
 permissions:
   challenge.host:

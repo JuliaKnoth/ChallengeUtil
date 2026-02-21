@@ -473,8 +473,7 @@ public class SettingsGUI {
         // Row 0 (0-8): Team Modes (top row)
         gui.setItem(1, createChallengeItem("manhunt_mode", Material.COMPASS));
         gui.setItem(2, createChallengeItem("team_race_mode", Material.RECOVERY_COMPASS));
-        // Slot 3 is intentionally empty (custom_end_fight is now auto-managed by team_race_mode)
-        gui.setItem(3, createEmptyGlassPane());
+        gui.setItem(3, createChallengeItem("connunity_hunt_mode", Material.SPYGLASS));
         
         // Row 1 (9-17): Empty
         
@@ -589,8 +588,14 @@ public class SettingsGUI {
         // Add mutual exclusivity warning for Manhunt and Team Race
         if (challengeName.equals("manhunt_mode")) {
             Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+            Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
             if (teamRaceEnabled != null && teamRaceEnabled) {
                 lore.add(Component.text("⚠ Manhunt Race is active!", NamedTextColor.RED, TextDecoration.BOLD));
+                lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
+                lore.add(Component.text(""));
+            }
+            if (connunityHuntEnabled != null && connunityHuntEnabled) {
+                lore.add(Component.text("⚠ Connunity Hunt is active!", NamedTextColor.RED, TextDecoration.BOLD));
                 lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
                 lore.add(Component.text(""));
             }
@@ -599,14 +604,36 @@ public class SettingsGUI {
             lore.add(Component.text("Hunters immobilized for 2 minutes", NamedTextColor.GRAY, TextDecoration.ITALIC));
         } else if (challengeName.equals("team_race_mode")) {
             Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
+            Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
             if (manhuntEnabled != null && manhuntEnabled) {
                 lore.add(Component.text("⚠ Manhunt Mode is active!", NamedTextColor.RED, TextDecoration.BOLD));
+                lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
+                lore.add(Component.text(""));
+            }
+            if (connunityHuntEnabled != null && connunityHuntEnabled) {
+                lore.add(Component.text("⚠ Connunity Hunt is active!", NamedTextColor.RED, TextDecoration.BOLD));
                 lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
                 lore.add(Component.text(""));
             }
             lore.add(Component.text("Use /team <TeamName> to join", NamedTextColor.AQUA, TextDecoration.ITALIC));
             lore.add(Component.text("2-10 teams race to the Ender Dragon", NamedTextColor.GRAY, TextDecoration.ITALIC));
             lore.add(Component.text("Compasses point to nearest team", NamedTextColor.GOLD, TextDecoration.ITALIC));
+        } else if (challengeName.equals("connunity_hunt_mode")) {
+            Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
+            Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+            if (manhuntEnabled != null && manhuntEnabled) {
+                lore.add(Component.text("⚠ Manhunt Mode is active!", NamedTextColor.RED, TextDecoration.BOLD));
+                lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
+                lore.add(Component.text(""));
+            }
+            if (teamRaceEnabled != null && teamRaceEnabled) {
+                lore.add(Component.text("⚠ Manhunt Race is active!", NamedTextColor.RED, TextDecoration.BOLD));
+                lore.add(Component.text("Will be automatically disabled", NamedTextColor.YELLOW, TextDecoration.ITALIC));
+                lore.add(Component.text(""));
+            }
+            lore.add(Component.text("Auto teams by permission", NamedTextColor.AQUA, TextDecoration.ITALIC));
+            lore.add(Component.text("Streamer: vup.creator / challenge.creator", NamedTextColor.GOLD, TextDecoration.ITALIC));
+            lore.add(Component.text("Viewer: everyone else", NamedTextColor.BLUE, TextDecoration.ITALIC));
         } else if (challengeName.equals("block_break_randomizer")) {
             lore.add(Component.text("Blocks drop random items", NamedTextColor.AQUA, TextDecoration.ITALIC));
             lore.add(Component.text("Same for all players each match", NamedTextColor.GRAY, TextDecoration.ITALIC));
@@ -939,6 +966,8 @@ public class SettingsGUI {
                 return "Activate Manhunt Mode";
             case "team_race_mode":
                 return "Manhunt Race - 2-10 Teams";
+            case "connunity_hunt_mode":
+                return "Connunity Hunt - Streamer vs Viewer";
             case "custom_end_fight":
                 return "Custom End Fight: Chase the Egg";
             case "chunk_items":

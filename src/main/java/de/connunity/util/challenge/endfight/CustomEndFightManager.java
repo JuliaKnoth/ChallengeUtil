@@ -589,9 +589,9 @@ public class CustomEndFightManager {
         this.eggHolderTeam = plugin.getDataManager().getPlayerTeam(eggHolder.getUniqueId());
         
         try {
-            // Set egg holder's max health to 40
-            eggHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(40.0);
-            eggHolder.setHealth(40.0);
+            // Set egg holder's max health to x
+            eggHolder.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(60.0);
+            eggHolder.setHealth(60.0);
         } catch (Exception e) {
             plugin.logWarning("Error setting egg holder health: " + e.getMessage());
         }
@@ -626,6 +626,17 @@ public class CustomEndFightManager {
             plugin.logWarning("Error removing immortality: " + e.getMessage());
         }
         
+        try {
+            // In Team Race mode: remove compass from egg holder's inventory so it is
+            // replaced by the dragon egg (prevents a full-inventory bug)
+            Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+            if (teamRaceEnabled != null && teamRaceEnabled) {
+                eggHolder.getInventory().remove(Material.COMPASS);
+            }
+        } catch (Exception e) {
+            plugin.logWarning("Error removing compass from egg holder: " + e.getMessage());
+        }
+
         try {
             // Send messages to all players
             announceEggHolderPhase(eggHolder);
@@ -893,35 +904,47 @@ public class CustomEndFightManager {
         
         String winningTeam = eggHolderTeam != null ? eggHolderTeam : "No Team";
         
-        // Create title screen
-        Component titleText = lang.getComponent("endfight.team-won")
-            .replaceText(builder -> builder.matchLiteral("{team}").replacement(winningTeam));
-        Component subtitleText = lang.getComponent("endfight.team-escaped");
-        
-        // Create title with timings
-        Title gameTitle = Title.title(
-            titleText,
-            subtitleText,
-            Title.Times.times(
-                java.time.Duration.ofMillis(500),  // Fade in
-                java.time.Duration.ofSeconds(5),    // Stay
-                java.time.Duration.ofSeconds(2)     // Fade out
-            )
-        );
+        Component subtitle = lang.getComponent("endfight.team-escaped");
+        NamedTextColor winColor = NamedTextColor.GREEN;
+        NamedTextColor loseColor = NamedTextColor.RED;
         
         // Announce team victory to all players
         for (Player player : Bukkit.getOnlinePlayers()) {
+            String playerTeam = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            boolean isWinner = winningTeam.equalsIgnoreCase(playerTeam);
+            
+            Component title = isWinner ? 
+                lang.getComponent("endfight.you-win-title") : 
+                lang.getComponent("endfight.you-lose-title");
+            NamedTextColor color = isWinner ? winColor : loseColor;
+            
+            Component message;
+            if (isWinner) {
+                message = lang.getComponent("endfight.your-team-won");
+            } else {
+                message = lang.getComponent("endfight.enemy-team-won")
+                    .replaceText(builder -> builder.matchLiteral("{team}").replacement(winningTeam));
+            }
+            
+            // Create title with timings
+            Title gameTitle = Title.title(
+                title,
+                subtitle,
+                Title.Times.times(
+                    java.time.Duration.ofMillis(500),  // Fade in
+                    java.time.Duration.ofSeconds(5),    // Stay
+                    java.time.Duration.ofSeconds(2)     // Fade out
+                )
+            );
+            
             // Show title
             player.showTitle(gameTitle);
             
             // Send chat messages
             player.sendMessage(Component.text(""));
-            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
-            player.sendMessage(Component.text("🏆 ", NamedTextColor.GOLD, TextDecoration.BOLD)
-                .append(lang.getComponent("endfight.team-won")
-                    .replaceText(builder -> builder.matchLiteral("{team}").replacement(winningTeam))));
-            player.sendMessage(Component.text("  ").append(lang.getComponent("endfight.team-escaped")));
-            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD));
+            player.sendMessage(Component.text("═══════════════════════════════════", color));
+            player.sendMessage(message);
+            player.sendMessage(Component.text("═══════════════════════════════════", color));
             player.sendMessage(Component.text(""));
             
             // Play victory sound
@@ -1258,13 +1281,36 @@ public class CustomEndFightManager {
      * Transfer egg holder status to a new player
      */
     private void transferEggHolder(Player newHolder, String newTeam, Player previousHolder) {
-        // Remove dragon egg from previous holder and give to new holder
+        // Remove dragon egg from previous holder, restore their compass, and give egg to new holder
         try {
             if (previousHolder != null && previousHolder.isOnline()) {
                 previousHolder.getInventory().remove(Material.DRAGON_EGG);
+                // Give tracking compass back to the previous holder
+                Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+                if (teamRaceEnabled != null && teamRaceEnabled) {
+                    String prevTeam = plugin.getDataManager().getPlayerTeam(previousHolder.getUniqueId());
+                    if (prevTeam != null) {
+                        plugin.getTeamRaceManager().giveCompassToPlayer(previousHolder, prevTeam);
+                    }
+                }
             }
-            // Force dragon egg into new holder's inventory
-            newHolder.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.DRAGON_EGG, 1));
+            // Replace the new holder's tracking compass with the dragon egg so the
+            // inventory never overflows and the egg lands in a known slot.
+            boolean compassReplaced = false;
+            Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+            if (teamRaceEnabled != null && teamRaceEnabled) {
+                for (int i = 0; i < newHolder.getInventory().getSize(); i++) {
+                    org.bukkit.inventory.ItemStack invItem = newHolder.getInventory().getItem(i);
+                    if (invItem != null && invItem.getType() == Material.COMPASS) {
+                        newHolder.getInventory().setItem(i, new org.bukkit.inventory.ItemStack(Material.DRAGON_EGG, 1));
+                        compassReplaced = true;
+                        break;
+                    }
+                }
+            }
+            if (!compassReplaced) {
+                newHolder.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.DRAGON_EGG, 1));
+            }
         } catch (Exception e) {
             plugin.logWarning("Error transferring dragon egg: " + e.getMessage());
         }

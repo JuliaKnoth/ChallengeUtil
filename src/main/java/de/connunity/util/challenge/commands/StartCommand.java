@@ -4,6 +4,7 @@ import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import de.connunity.util.challenge.timer.TimerManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.title.Title;
@@ -62,9 +63,15 @@ public class StartCommand implements CommandExecutor {
         // Check if manhunt mode is enabled and all players have selected teams
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
         
-        // Prevent both modes from being enabled at the same time
-        if (manhuntEnabled != null && manhuntEnabled && teamRaceEnabled != null && teamRaceEnabled) {
+        // Prevent multiple team modes from being enabled at the same time
+        int activeModes = 0;
+        if (manhuntEnabled != null && manhuntEnabled) activeModes++;
+        if (teamRaceEnabled != null && teamRaceEnabled) activeModes++;
+        if (connunityHuntEnabled != null && connunityHuntEnabled) activeModes++;
+        
+        if (activeModes > 1) {
             sender.sendMessage(lang.getComponent("start.both-modes-enabled"));
             sender.sendMessage(lang.getComponent("start.deactivate-one-mode"));
             return true;
@@ -183,6 +190,19 @@ public class StartCommand implements CommandExecutor {
             }
         }
         
+        // Check if Connunity Hunt mode is enabled and validate team setup
+        if (connunityHuntEnabled != null && connunityHuntEnabled) {
+            // Auto-assign all players to teams based on permissions
+            plugin.getConnunityHuntManager().assignAllPlayersToTeams();
+            
+            // Validate that we have at least one player in each team
+            if (!plugin.getConnunityHuntManager().validateTeamSetup()) {
+                sender.sendMessage(lang.getComponent("start.connunityhunt-no-teams-header"));
+                sender.sendMessage(lang.getComponent("start.connunityhunt-need-both-teams"));
+                return true;
+            }
+        }
+        
         // If paused, just resume (no countdown)
         if (timerManager.isPaused()) {
             timerManager.resume();
@@ -293,6 +313,9 @@ public class StartCommand implements CommandExecutor {
             // Start team race mechanics if enabled
             plugin.getTeamRaceManager().start();
             
+            // Start connunity hunt mechanics if enabled
+            plugin.getConnunityHuntManager().start();
+            
             // Start chunk item challenge if enabled
             plugin.getChunkItemChallengeListener().start();
             
@@ -310,6 +333,20 @@ public class StartCommand implements CommandExecutor {
                         hunter.sendMessage(lang.getComponent("start.hunter-headstart"));
                         hunter.sendMessage(lang.getComponent("start.hunter-compass-unlock"));
                         hunter.sendMessage(Component.text(""));
+                    }
+                }
+            }
+            
+            // Notify viewers about their restrictions
+            Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+            if (connunityHuntEnabled != null && connunityHuntEnabled) {
+                for (UUID viewerId : plugin.getDataManager().getPlayersInTeam("Viewer")) {
+                    Player viewer = Bukkit.getPlayer(viewerId);
+                    if (viewer != null && viewer.isOnline()) {
+                        viewer.sendMessage(Component.text(""));
+                        viewer.sendMessage(lang.getComponent("start.viewer-restrictions-header"));
+                        viewer.sendMessage(lang.getComponent("start.viewer-headstart"));
+                        viewer.sendMessage(Component.text(""));
                     }
                 }
             }

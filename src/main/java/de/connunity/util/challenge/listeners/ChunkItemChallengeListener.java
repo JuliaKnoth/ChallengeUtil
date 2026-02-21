@@ -52,6 +52,7 @@ public class ChunkItemChallengeListener implements Listener {
     // OPTIMIZATION: Cache challenge/manhunt enabled status to avoid constant disk reads
     private boolean challengeEnabled = false;
     private boolean manhuntEnabled = false;
+    private boolean connunityHuntEnabled = false;
     private long lastCacheUpdate = 0;
     private static final long CACHE_REFRESH_INTERVAL = 5000; // 5 seconds
     
@@ -166,6 +167,9 @@ public class ChunkItemChallengeListener implements Listener {
         
         Boolean manhunt = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         manhuntEnabled = manhunt != null && manhunt;
+
+        Boolean connunityHunt = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        connunityHuntEnabled = connunityHunt != null && connunityHunt;
         
         lastCacheUpdate = System.currentTimeMillis();
     }
@@ -197,9 +201,14 @@ public class ChunkItemChallengeListener implements Listener {
     
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
-        // CRITICAL PERFORMANCE: Check if player moved to a different chunk (not just a new block)
-        // This is a chunk-based challenge, so we only care about chunk changes
-        if (event.getFrom().getChunk().equals(event.getTo().getChunk())) {
+        if (event.getTo() == null) {
+            return;
+        }
+
+        // Check chunk transition using coordinates (avoids chunk object creation)
+        if (event.getFrom().getWorld() == event.getTo().getWorld()
+                && (event.getFrom().getBlockX() >> 4) == (event.getTo().getBlockX() >> 4)
+                && (event.getFrom().getBlockZ() >> 4) == (event.getTo().getBlockZ() >> 4)) {
             return; // Player is still in the same chunk - skip all processing
         }
         
@@ -226,9 +235,7 @@ public class ChunkItemChallengeListener implements Listener {
             return;
         }
         
-        // Get current chunk
-        Chunk currentChunk = player.getLocation().getChunk();
-        String chunkKey = getChunkKey(currentChunk);
+        String chunkKey = getChunkKey(event.getTo().getWorld(), event.getTo().getBlockX() >> 4, event.getTo().getBlockZ() >> 4);
         
         // Check if player moved to a new chunk
         UUID playerId = player.getUniqueId();
@@ -261,14 +268,20 @@ public class ChunkItemChallengeListener implements Listener {
      * OPTIMIZED: Uses cached values instead of disk reads
      */
     private boolean canPlayerReceiveItems(Player player) {
+        // Get player's cached team (minimal disk I/O)
+        String team = getCachedTeam(player.getUniqueId());
+        
+        // Check for Connunity Hunt mode - only Streamers receive items
+        if (connunityHuntEnabled) {
+            // In Connunity Hunt mode, only Streamers get challenge items
+            return "Streamer".equals(team);
+        }
+        
         // Check cached manhunt mode status (no disk I/O)
         if (!manhuntEnabled) {
             // Not in manhunt mode, everyone can receive items
             return true;
         }
-        
-        // Get player's cached team (minimal disk I/O)
-        String team = getCachedTeam(player.getUniqueId());
         
         // Runners always receive items
         if ("runner".equals(team)) {
@@ -382,14 +395,14 @@ public class ChunkItemChallengeListener implements Listener {
     /**
      * Get a unique key for a chunk (optimized to reduce string allocation)
      */
-    private String getChunkKey(Chunk chunk) {
+    private String getChunkKey(org.bukkit.World world, int chunkX, int chunkZ) {
         // Use StringBuilder to reduce string allocation garbage
         return new StringBuilder(32)
-            .append(chunk.getWorld().getName())
+            .append(world.getName())
             .append('_')
-            .append(chunk.getX())
+            .append(chunkX)
             .append('_')
-            .append(chunk.getZ())
+            .append(chunkZ)
             .toString();
     }
     

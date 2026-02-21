@@ -39,6 +39,17 @@ public class BlockBreakRandomizerListener implements Listener {
     
     // Map to store what each block type drops (deterministic based on seed)
     private final Map<Material, Material> blockDropMapping = new HashMap<>();
+
+    // Cache challenge flags for high-frequency events
+    private boolean randomizerEnabled = false;
+    private boolean connunityHuntEnabled = false;
+    private long lastCacheUpdate = 0;
+    private static final long CACHE_REFRESH_INTERVAL = 5000; // 5 seconds
+
+    // Cache player team lookup for Connunity Hunt mode
+    private final Map<UUID, String> teamCache = new HashMap<>();
+    private final Map<UUID, Long> teamCacheTime = new HashMap<>();
+    private static final long TEAM_CACHE_DURATION = 10000; // 10 seconds
     
     public BlockBreakRandomizerListener(ChallengeUtil plugin) {
         this.plugin = plugin;
@@ -64,6 +75,33 @@ public class BlockBreakRandomizerListener implements Listener {
     public void resetForNewMatch() {
         matchSeed = System.currentTimeMillis();
         blockDropMapping.clear(); // Clear cached mappings
+        teamCache.clear();
+        teamCacheTime.clear();
+        lastCacheUpdate = 0;
+    }
+
+    private void refreshChallengeCache() {
+        Boolean randomizer = plugin.getDataManager().getSavedChallenge("block_break_randomizer");
+        randomizerEnabled = randomizer != null && randomizer;
+
+        Boolean connunity = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        connunityHuntEnabled = connunity != null && connunity;
+
+        lastCacheUpdate = System.currentTimeMillis();
+    }
+
+    private String getCachedTeam(UUID playerId) {
+        long now = System.currentTimeMillis();
+        Long cacheTime = teamCacheTime.get(playerId);
+
+        if (cacheTime == null || (now - cacheTime) > TEAM_CACHE_DURATION) {
+            String team = plugin.getDataManager().getPlayerTeam(playerId);
+            teamCache.put(playerId, team);
+            teamCacheTime.put(playerId, now);
+            return team;
+        }
+
+        return teamCache.get(playerId);
     }
     
     /**
@@ -200,9 +238,12 @@ public class BlockBreakRandomizerListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockDropItem(BlockDropItemEvent event) {
-        // Check if challenge is enabled
-        Boolean randomizerEnabled = plugin.getDataManager().getSavedChallenge("block_break_randomizer");
-        if (randomizerEnabled == null || !randomizerEnabled) {
+        long now = System.currentTimeMillis();
+        if (now - lastCacheUpdate > CACHE_REFRESH_INTERVAL) {
+            refreshChallengeCache();
+        }
+
+        if (!randomizerEnabled) {
             return; // Challenge not enabled
         }
         
@@ -214,6 +255,14 @@ public class BlockBreakRandomizerListener implements Listener {
         Player player = event.getPlayer();
         Block block = event.getBlockState().getBlock();
         Material blockType = event.getBlockState().getType();
+        
+        // In Connunity Hunt mode, only apply randomizer to Streamers
+        if (connunityHuntEnabled) {
+            String team = getCachedTeam(player.getUniqueId());
+            if (!"Streamer".equals(team)) {
+                return; // Viewers get normal block drops
+            }
+        }
         
         // Skip creative mode
         if (player.getGameMode() == GameMode.CREATIVE) {

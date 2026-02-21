@@ -73,6 +73,35 @@ public class PlayerRespawnListener implements Listener {
             return;
         }
         
+        // Check if connunity hunt mode is enabled and timer is running
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        
+        if (connunityHuntEnabled != null && connunityHuntEnabled && isTimerRunning && !isTimerPaused) {
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            
+            // Viewers: Use bed spawn if available, otherwise world spawn
+            if ("Viewer".equals(team)) {
+                if (player.getBedSpawnLocation() != null) {
+                    Location bedSpawn = player.getBedSpawnLocation();
+                    event.setRespawnLocation(bedSpawn);
+                    plugin.logDebug("Viewer " + player.getName() + " respawning at bed spawn");
+                    return;
+                } else {
+                    World speedrunWorld = Bukkit.getWorld(speedrunWorldName);
+                    if (speedrunWorld != null) {
+                        Location respawnLocation = speedrunWorld.getSpawnLocation();
+                        event.setRespawnLocation(respawnLocation);
+                        plugin.logDebug("Viewer " + player.getName() + " respawning at speedrun spawn (no bed)");
+                        return;
+                    }
+                }
+            }
+            
+            // Streamers: Don't respawn (handled in PlayerDeathListener - they become spectators)
+            // This code shouldn't be reached for streamers, but just in case
+            return;
+        }
+        
         // Not in manhunt mode - use bed spawn if available and respawns are enabled
         if (allowRespawn && player.getBedSpawnLocation() != null) {
             Location bedSpawn = player.getBedSpawnLocation();

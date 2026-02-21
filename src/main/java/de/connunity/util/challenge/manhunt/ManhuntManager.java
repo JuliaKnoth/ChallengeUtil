@@ -48,6 +48,13 @@ public class ManhuntManager {
     
     // Track last known runner position for each hunter (to prevent compass spinning)
     private final Map<UUID, Location> lastKnownRunnerPosition = new HashMap<>();
+
+    // Cache portal fallback scans to avoid heavy world block scanning every second
+    private final Map<UUID, Location> cachedPortalTarget = new HashMap<>();
+    private final Map<UUID, Location> portalScanOrigin = new HashMap<>();
+    private final Map<UUID, Long> portalScanTime = new HashMap<>();
+    private static final long PORTAL_SCAN_CACHE_MS = 10000; // 10 seconds
+    private static final double PORTAL_SCAN_MOVE_THRESHOLD_SQ = 24 * 24;
     
     // Track glass blocks placed under hunters during blindness period
     private final java.util.Set<Location> placedGlassBlocks = new java.util.HashSet<>();
@@ -102,6 +109,9 @@ public class ManhuntManager {
         compassCharged.clear();
         compassLastTarget.clear();
         lastKnownRunnerPosition.clear();
+        cachedPortalTarget.clear();
+        portalScanOrigin.clear();
+        portalScanTime.clear();
         placedGlassBlocks.clear();
 
         // Start blindness task for hunters (first 2 minutes)
@@ -157,6 +167,9 @@ public class ManhuntManager {
         compassCharged.clear();
         compassLastTarget.clear();
         lastKnownRunnerPosition.clear();
+        cachedPortalTarget.clear();
+        portalScanOrigin.clear();
+        portalScanTime.clear();
         placedGlassBlocks.clear();
     }
 
@@ -461,6 +474,11 @@ public class ManhuntManager {
         compassUpdateTask = new BukkitRunnable() {
             @Override
             public void run() {
+                // Only update compasses while timer is running
+                if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
+                    return;
+                }
+
                 Set<UUID> hunters = plugin.getDataManager().getPlayersInTeam("hunter");
                 Set<UUID> runners = plugin.getDataManager().getPlayersInTeam("runner");
 
@@ -486,7 +504,7 @@ public class ManhuntManager {
 
                         // Only track runners in same world
                         if (hunter.getWorld().equals(runner.getWorld())) {
-                            double distance = hunter.getLocation().distance(runner.getLocation());
+                            double distance = hunter.getLocation().distanceSquared(runner.getLocation());
                             if (distance < nearestDistance) {
                                 nearestDistance = distance;
                                 nearestRunner = runner;
@@ -529,7 +547,7 @@ public class ManhuntManager {
         }
         
         // Otherwise, try to find a portal to point to
-        Location portalTarget = findNearestPortal(hunter);
+        Location portalTarget = getCachedNearestPortal(hunter, hunterId);
         if (portalTarget != null) {
             return portalTarget;
         }
@@ -543,47 +561,80 @@ public class ManhuntManager {
         // No fallback available - return null (compass keeps current target)
         return null;
     }
+
+    private Location getCachedNearestPortal(Player hunter, UUID hunterId) {
+        long now = System.currentTimeMillis();
+        Location current = hunter.getLocation();
+        Location scanOrigin = portalScanOrigin.get(hunterId);
+        Long lastScan = portalScanTime.get(hunterId);
+
+        if (lastScan != null && (now - lastScan) < PORTAL_SCAN_CACHE_MS && scanOrigin != null
+                && scanOrigin.getWorld() != null && scanOrigin.getWorld().equals(current.getWorld())
+                && scanOrigin.distanceSquared(current) <= PORTAL_SCAN_MOVE_THRESHOLD_SQ) {
+            return cachedPortalTarget.get(hunterId);
+        }
+
+        Location nearest = findNearestPortal(current, current.getWorld());
+        portalScanTime.put(hunterId, now);
+        portalScanOrigin.put(hunterId, current.clone());
+
+        if (nearest != null) {
+            cachedPortalTarget.put(hunterId, nearest);
+        } else {
+            cachedPortalTarget.remove(hunterId);
+        }
+
+        return nearest;
+    }
     
     /**
      * Find the nearest portal (Nether or End) to the hunter
      * Returns the portal location or null if none found nearby
      */
-    private Location findNearestPortal(Player hunter) {
-        Location hunterLoc = hunter.getLocation();
-        org.bukkit.World world = hunter.getWorld();
+    private Location findNearestPortal(Location hunterLoc, org.bukkit.World world) {
         
         // Search radius for portals (in blocks)
         int searchRadius = 128;
+        int baseX = hunterLoc.getBlockX();
+        int baseY = hunterLoc.getBlockY();
+        int baseZ = hunterLoc.getBlockZ();
+        int minY = Math.max(world.getMinHeight(), baseY - searchRadius);
+        int maxY = Math.min(world.getMaxHeight() - 1, baseY + searchRadius);
         
-        Location nearestPortal = null;
-        double nearestDistance = Double.MAX_VALUE;
+        int nearestX = 0;
+        int nearestY = 0;
+        int nearestZ = 0;
+        double nearestDistanceSq = Double.MAX_VALUE;
+        boolean found = false;
         
         // Search for nether portals (obsidian frame)
-        for (int x = -searchRadius; x <= searchRadius; x += 4) {
-            for (int y = -searchRadius; y <= searchRadius; y += 4) {
-                for (int z = -searchRadius; z <= searchRadius; z += 4) {
-                    Location checkLoc = hunterLoc.clone().add(x, y, z);
-                    
-                    // Check if this location is within world bounds
-                    if (checkLoc.getBlockY() < world.getMinHeight() || checkLoc.getBlockY() > world.getMaxHeight()) {
-                        continue;
-                    }
-                    
-                    Material blockType = checkLoc.getBlock().getType();
+        for (int x = baseX - searchRadius; x <= baseX + searchRadius; x += 4) {
+            for (int y = minY; y <= maxY; y += 4) {
+                for (int z = baseZ - searchRadius; z <= baseZ + searchRadius; z += 4) {
+                    Material blockType = world.getBlockAt(x, y, z).getType();
                     
                     // Check for nether portal or end portal frame
                     if (blockType == Material.NETHER_PORTAL || blockType == Material.END_PORTAL_FRAME || blockType == Material.END_PORTAL) {
-                        double distance = hunterLoc.distance(checkLoc);
-                        if (distance < nearestDistance) {
-                            nearestDistance = distance;
-                            nearestPortal = checkLoc.clone();
+                        double distanceSq = (x - baseX) * (double) (x - baseX)
+                                + (y - baseY) * (double) (y - baseY)
+                                + (z - baseZ) * (double) (z - baseZ);
+                        if (distanceSq < nearestDistanceSq) {
+                            nearestDistanceSq = distanceSq;
+                            nearestX = x;
+                            nearestY = y;
+                            nearestZ = z;
+                            found = true;
                         }
                     }
                 }
             }
         }
         
-        return nearestPortal;
+        if (!found) {
+            return null;
+        }
+
+        return new Location(world, nearestX + 0.5, nearestY, nearestZ + 0.5);
     }
 
     /**
@@ -691,8 +742,8 @@ public class ManhuntManager {
                 // Only play sound and notify if hunter is within 25 blocks and in same world
                 boolean isClose = false;
                 if (hunter.getWorld().equals(runner.getWorld())) {
-                    double distance = hunter.getLocation().distance(runner.getLocation());
-                    if (distance <= 25.0) {
+                    double distanceSq = hunter.getLocation().distanceSquared(runner.getLocation());
+                    if (distanceSq <= 625.0) {
                         isClose = true;
                     }
                 }

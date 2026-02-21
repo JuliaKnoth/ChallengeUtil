@@ -76,8 +76,14 @@ public class PlayerJoinListener implements Listener {
                 resetPlayerState(player);
             }
             
+            // Assign to Connunity Hunt team if mode is enabled
+            assignConnunityHuntTeamIfNeeded(player);
+            
             // Give compass to hunters if manhunt is active and timer is running
             giveCompassToHunterIfNeeded(player);
+            
+            // Give team selection menu item if team race is active and timer is not running
+            giveTeamMenuItemIfNeeded(player);
             
             // Notify ops/hosts about available updates
             notifyAboutUpdate(player);
@@ -193,6 +199,26 @@ public class PlayerJoinListener implements Listener {
     }
     
     /**
+     * Assign player to Connunity Hunt team if mode is enabled
+     */
+    private void assignConnunityHuntTeamIfNeeded(Player player) {
+        // Check if Connunity Hunt mode is enabled
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        if (connunityHuntEnabled == null || !connunityHuntEnabled) {
+            return;
+        }
+        
+        // Assign the player to a team based on their permissions
+        plugin.getConnunityHuntManager().assignPlayerToTeam(player);
+        
+        String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+        plugin.logDebug("Assigned " + player.getName() + " to Connunity Hunt team: " + team);
+        
+        // Handle viewer rejoining (applies/removes blindness and invulnerability as needed)
+        plugin.getConnunityHuntManager().handleViewerRejoin(player);
+    }
+    
+    /**
      * Give compass to hunter if manhunt is active and timer is running
      */
     private void giveCompassToHunterIfNeeded(Player player) {
@@ -216,6 +242,21 @@ public class PlayerJoinListener implements Listener {
         // Give the hunter a compass
         plugin.getManhuntManager().giveCompassToHunter(player);
         plugin.logDebug("Gave compass to rejoining hunter: " + player.getName());
+    }
+    
+    /**
+     * Give team selection menu item if team race is active
+     */
+    private void giveTeamMenuItemIfNeeded(Player player) {
+        // Check if team race mode is enabled
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (teamRaceEnabled == null || !teamRaceEnabled) {
+            return;
+        }
+        
+        // Give (or refresh) the team menu item, reflecting the player's current team
+        plugin.getTeamSelectionItemListener().updateTeamMenuItem(player);
+        plugin.logDebug("Gave team selection menu item to: " + player.getName());
     }
     
     /**

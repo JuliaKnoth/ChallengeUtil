@@ -94,6 +94,12 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
             case "spectator":
                 prefix = "<gray><bold>[SPECTATOR]</bold> <reset>";
                 break;
+            case "streamer":
+                prefix = "<#9146ff><bold>[STREAMER]</bold> <reset>";
+                break;
+            case "viewer":
+                prefix = "<gray><bold>[VIEWER]</bold> <reset>";
+                break;
             default:
                 // Team Race mode - get color from TeamRaceManager
                 String colorTag = ColorUtil.getTeamColorTag(team);
@@ -128,6 +134,10 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
             case "hunter":
                 return "<gold>"; // Gold
             case "spectator":
+                return "<gray>"; // Gray
+            case "streamer":
+                return "<#9146ff>"; // Purple
+            case "viewer":
                 return "<gray>"; // Gray
             default:
                 // Team Race mode - get color tag from ColorUtil

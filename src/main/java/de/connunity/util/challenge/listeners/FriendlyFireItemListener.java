@@ -435,6 +435,16 @@ public class FriendlyFireItemListener implements Listener {
      * Give an item to a player based on their current health
      */
     private void giveHealthBasedItem(Player player) {
+        // In Connunity Hunt mode, only Streamers can receive friendly fire items
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        if (connunityHuntEnabled != null && connunityHuntEnabled) {
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            if (!"Streamer".equals(team)) {
+                // Viewers cannot use friendly fire items in Connunity Hunt mode
+                return;
+            }
+        }
+        
         // Check if player has a penalty for hunter-on-hunter friendly fire
         Long penaltyEndTime = penaltyPlayers.get(player.getUniqueId());
         if (penaltyEndTime != null) {

@@ -1,6 +1,8 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -99,10 +101,16 @@ public class WaitingRoomListener implements Listener {
 
     /**
      * Monitor teleports (e.g., ender pearl, commands) to ensure teleporting below threshold is handled
+     * IMPORTANT: Only applies to the waiting room world!
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerTeleport(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
+        // Only run the check if the teleport destination is the waiting room world
+        Location to = event.getTo();
+        if (to == null || to.getWorld() == null || !to.getWorld().getName().equals(waitingRoomName)) {
+            return;
+        }
         // Run the check slightly later to allow the teleport to complete
         org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> checkAndKillIfBelow(player), 1L);
     }
@@ -240,8 +248,17 @@ public class WaitingRoomListener implements Listener {
      */
     private void checkAndKillIfBelow(Player player) {
         if (player == null || !player.isOnline()) return;
-        // World check already done in onPlayerMove for performance
-        // This method is now only called for players already confirmed to be in waiting room
+        
+        // Don't kill players who are already in spectator or creative mode
+        GameMode mode = player.getGameMode();
+        if (mode == GameMode.SPECTATOR || mode == GameMode.CREATIVE) {
+            return;
+        }
+        
+        // Safety: only kill players who are actually in the waiting room world
+        if (!player.getWorld().getName().equals(waitingRoomName)) {
+            return;
+        }
 
         double y = player.getLocation().getY();
         if (y < WAITING_ROOM_MIN_Y) {

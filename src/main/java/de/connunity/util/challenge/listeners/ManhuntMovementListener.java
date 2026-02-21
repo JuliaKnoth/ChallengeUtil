@@ -70,7 +70,16 @@ public class ManhuntMovementListener implements Listener {
         
         // Check if hunter movement is restricted
         if (plugin.getManhuntManager().isHunterMovementRestricted()) {
-            event.setCancelled(true);
+            // Only restrict X/Z movement, allow Y (falling)
+            org.bukkit.Location from = event.getFrom();
+            org.bukkit.Location to = event.getTo();
+            
+            if (to != null) {
+                // Keep original X/Z coordinates, allow Y to change (for falling)
+                to.setX(from.getX());
+                to.setZ(from.getZ());
+                event.setTo(to);
+            }
             
             // Send message occasionally (not spam)
             if (player.getTicksLived() % 40 == 0) { // Every 2 seconds

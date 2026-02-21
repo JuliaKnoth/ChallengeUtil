@@ -515,9 +515,20 @@ public class TimedRandomItemListener implements Listener {
             return;
         }
         
+        // Check if Connunity Hunt mode is enabled
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        
         // Give an item to each online player
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isOnline() && !player.isDead()) {
+                // In Connunity Hunt mode, only give items to Streamers
+                if (connunityHuntEnabled != null && connunityHuntEnabled) {
+                    String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+                    if (!"Streamer".equals(team)) {
+                        continue; // Skip Viewers
+                    }
+                }
+                
                 giveRandomItem(player, pool, poolKey);
             }
         }

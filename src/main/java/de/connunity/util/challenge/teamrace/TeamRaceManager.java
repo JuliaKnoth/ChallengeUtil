@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.teamrace;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.endfight.CustomEndFightManager;
 import de.connunity.util.challenge.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -9,6 +10,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -74,6 +76,9 @@ public class TeamRaceManager {
             return;
         }
 
+        // Remove team selection menu items from all players (teams are now locked)
+        removeTeamMenuItems();
+        
         // Give all players compasses
         giveTeamCompasses();
         
@@ -169,7 +174,25 @@ public class TeamRaceManager {
                             continue;
                         }
 
-                        // If someone has entered the End, point compass to end portal
+                        // --- Custom End Fight: egg holder tracking in The End ---
+                        CustomEndFightManager endFight = plugin.getCustomEndFightManager();
+                        boolean endFightActive = endFight != null && endFight.isActive() && endFight.isEggCollected();
+                        Player currentEggHolder = endFightActive ? endFight.getEggHolder() : null;
+
+                        // Skip updating compass for the egg holder (they hold the egg, not a compass)
+                        if (currentEggHolder != null && memberId.equals(currentEggHolder.getUniqueId())) {
+                            continue;
+                        }
+
+                        // Players in The End should track the egg holder
+                        if (endFightActive && currentEggHolder != null && currentEggHolder.isOnline()
+                                && player.getWorld().getEnvironment() == World.Environment.THE_END) {
+                            player.setCompassTarget(currentEggHolder.getLocation());
+                            updateCompassDisplayForEggHolder(player, teamName, currentEggHolder);
+                            continue;
+                        }
+
+                        // If someone has entered the End, point compass to end portal (Overworld behaviour)
                         if (endPortalLocation != null) {
                             player.setCompassTarget(endPortalLocation);
                             updateCompassDisplayForEndPortal(player, teamName);
@@ -232,7 +255,7 @@ public class TeamRaceManager {
 
                 // Only track enemies in same world
                 if (player.getWorld().equals(enemy.getWorld())) {
-                    double distance = player.getLocation().distance(enemy.getLocation());
+                    double distance = player.getLocation().distanceSquared(enemy.getLocation());
                     if (distance < nearestDistance) {
                         nearestDistance = distance;
                         nearestTeam = enemyTeam;
@@ -265,7 +288,7 @@ public class TeamRaceManager {
 
             // Only track enemies in same world
             if (player.getWorld().equals(enemy.getWorld())) {
-                double distance = player.getLocation().distance(enemy.getLocation());
+                double distance = player.getLocation().distanceSquared(enemy.getLocation());
                 if (distance < nearestDistance) {
                     nearestDistance = distance;
                     nearestEnemy = enemy;
@@ -387,34 +410,46 @@ public class TeamRaceManager {
      * Announce the winning team
      */
     private void announceWinner(String winningTeam) {
-        TeamColor teamColor = getTeamColor(winningTeam);
-        
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("team", winningTeam.toUpperCase());
-        Component title = lang.getComponent("teamrace.team-won-title", placeholders);
         Component subtitle = lang.getComponent("teamrace.dragon-defeated-subtitle");
+        NamedTextColor winColor = NamedTextColor.GREEN;
+        NamedTextColor loseColor = NamedTextColor.RED;
         
-        // Create title with timings
-        net.kyori.adventure.title.Title gameTitle = net.kyori.adventure.title.Title.title(
-            title,
-            subtitle,
-            net.kyori.adventure.title.Title.Times.times(
-                java.time.Duration.ofMillis(500),  // Fade in
-                java.time.Duration.ofSeconds(5),    // Stay
-                java.time.Duration.ofSeconds(2)     // Fade out
-            )
-        );
-        
-        // Show to all players
+        // Show personalized messages to each player
         for (Player player : Bukkit.getOnlinePlayers()) {
+            String playerTeam = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            boolean isWinner = winningTeam.equalsIgnoreCase(playerTeam);
+            
+            Component title = isWinner ? 
+                lang.getComponent("teamrace.you-win-title") : 
+                lang.getComponent("teamrace.you-lose-title");
+            NamedTextColor color = isWinner ? winColor : loseColor;
+            
+            Component message;
+            if (isWinner) {
+                message = lang.getComponent("teamrace.your-team-won");
+            } else {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("team", winningTeam.toUpperCase());
+                message = lang.getComponent("teamrace.enemy-team-won", placeholders);
+            }
+            
+            // Create title with timings
+            net.kyori.adventure.title.Title gameTitle = net.kyori.adventure.title.Title.title(
+                title,
+                subtitle,
+                net.kyori.adventure.title.Title.Times.times(
+                    java.time.Duration.ofMillis(500),  // Fade in
+                    java.time.Duration.ofSeconds(5),    // Stay
+                    java.time.Duration.ofSeconds(2)     // Fade out
+                )
+            );
+            
             player.showTitle(gameTitle);
             player.sendMessage(Component.text(""));
             player.sendMessage(lang.getComponent("teamrace.game-over-divider"));
             player.sendMessage(lang.getComponent("teamrace.game-over-title"));
             player.sendMessage(Component.text(""));
-            player.sendMessage(lang.getComponent("teamrace.winner-label")
-                    .append(Component.text("TEAM " + winningTeam.toUpperCase(), 
-                            teamColor.textColor, TextDecoration.BOLD)));
+            player.sendMessage(message);
             player.sendMessage(lang.getComponent("teamrace.game-over-divider"));
             player.sendMessage(Component.text(""));
             
@@ -541,6 +576,39 @@ public class TeamRaceManager {
     }
     
     /**
+     * Update compass display to show it's pointing to the egg holder in The End
+     */
+    private void updateCompassDisplayForEggHolder(Player player, String playerTeam, Player eggHolder) {
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (item != null && item.getType() == Material.COMPASS) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    TeamColor playerColor = getTeamColor(playerTeam);
+                    String holderTeamName = plugin.getDataManager().getPlayerTeam(eggHolder.getUniqueId());
+                    TeamColor holderColor = holderTeamName != null ? getTeamColor(holderTeamName) : getTeamColor("Weiß");
+
+                    Component compassName = Component.text("☽ ", NamedTextColor.WHITE, TextDecoration.BOLD)
+                            .append(Component.text(eggHolder.getName(), holderColor.textColor, TextDecoration.BOLD))
+                            .append(Component.text(" (Egg)", NamedTextColor.YELLOW, TextDecoration.BOLD));
+                    meta.displayName(compassName);
+
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Points to: ", NamedTextColor.GRAY)
+                            .append(Component.text(eggHolder.getName(), NamedTextColor.GOLD))
+                            .append(Component.text(" — Egg Holder", NamedTextColor.DARK_PURPLE)));
+                    lore.add(Component.text(""));
+                    lore.add(lang.getComponent("teamrace.compass-your-team")
+                            .append(Component.text("Team " + playerTeam, playerColor.textColor, TextDecoration.BOLD)));
+
+                    meta.lore(lore);
+                    item.setItemMeta(meta);
+                }
+            }
+        }
+    }
+
+    /**
      * Update compass display to show it's pointing to the end portal
      */
     private void updateCompassDisplayForEndPortal(Player player, String playerTeam) {
@@ -568,6 +636,24 @@ public class TeamRaceManager {
                     item.setItemMeta(meta);
                 }
             }
+        }
+    }
+    
+    /**
+     * Give team selection menu items to all online players
+     */
+    public void giveTeamMenuItems() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            plugin.getTeamSelectionItemListener().giveTeamMenuItem(player);
+        }
+    }
+    
+    /**
+     * Remove team selection menu items from all online players
+     */
+    public void removeTeamMenuItems() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            plugin.getTeamSelectionItemListener().removeTeamMenuItem(player);
         }
     }
 }

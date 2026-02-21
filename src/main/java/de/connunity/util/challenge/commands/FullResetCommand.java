@@ -216,48 +216,59 @@ public class FullResetCommand implements CommandExecutor {
             Bukkit.unloadWorld(endWorld, false); // Don't save - we're deleting it
         }
         
-        // Small delay to ensure worlds are fully unloaded before deletion (especially on Windows)
-        plugin.logDebug("Waiting for worlds to fully unload...");
-        try {
-            Thread.sleep(500); // 500ms delay to ensure file locks are released
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        
         // Delete world folders ASYNCHRONOUSLY
+        // NOTE: Thread.sleep is intentionally inside the async task so it doesn't block the main thread.
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            // Wait on the async thread for the OS to release file locks after unloadWorld (critical on Windows)
+            plugin.logDebug("Waiting for file locks to release before deletion...");
+            try {
+                Thread.sleep(1000); // 1 second – enough time for the JVM to release all world file handles
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
             File serverRoot = Bukkit.getWorldContainer();
             
-            try {
-                deleteWorldFolder(new File(serverRoot, worldName));
-                deleteWorldFolder(new File(serverRoot, worldName + "_nether"));
-                deleteWorldFolder(new File(serverRoot, worldName + "_the_end"));
-                
-                plugin.logInfo("World folders deleted successfully.");
-                
-            } catch (Exception e) {
-                plugin.logWarning("Failed to delete world folders: " + e.getMessage());
-                e.printStackTrace();
-                
-                // Reset flag on error
+            boolean deleted = true;
+            deleted &= deleteWorldFolder(new File(serverRoot, worldName));
+            deleted &= deleteWorldFolder(new File(serverRoot, worldName + "_nether"));
+            deleted &= deleteWorldFolder(new File(serverRoot, worldName + "_the_end"));
+            
+            if (!deleted) {
+                // One or more folders could not be fully deleted – log the error and abort so
+                // regenerateWorld doesn't silently re-open the stale world files.
+                plugin.logWarning("World folder deletion incomplete! The old world files may still be present.");
                 Bukkit.getScheduler().runTask(plugin, () -> {
-            plugin.setResetInProgress(false);
-            Bukkit.broadcast(Component.text("Welt-Löschung fehlgeschlagen! Prüfe die Konsole auf Fehler.", 
-                NamedTextColor.RED));
+                    plugin.setResetInProgress(false);
+                    Bukkit.broadcast(Component.text("Welt-Löschung fehlgeschlagen! Prüfe die Konsole auf Fehler.",
+                            NamedTextColor.RED));
                 });
                 return;
             }
+            
+            // Extra safety check: if the overworld folder still exists on disk, abort
+            if (new File(serverRoot, worldName).exists()) {
+                plugin.logWarning("World folder still exists after deletion attempt – aborting reset to avoid loading stale world!");
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    plugin.setResetInProgress(false);
+                    Bukkit.broadcast(Component.text("Welt-Löschung fehlgeschlagen! Prüfe die Konsole auf Fehler.",
+                            NamedTextColor.RED));
+                });
+                return;
+            }
+            
+            plugin.logInfo("World folders deleted successfully.");
             
             // PHASE 4: Regenerate world (must be on main thread)
             Bukkit.getScheduler().runTask(plugin, () -> {
                 try {
                     regenerateWorld(worldName, seed, players);
                 } catch (Exception e) {
-            plugin.logWarning("Failed to regenerate world: " + e.getMessage());
-            e.printStackTrace();
-            plugin.setResetInProgress(false);
-            Bukkit.broadcast(Component.text("Welt-Generierung fehlgeschlagen! Prüfe die Konsole.", 
-                NamedTextColor.RED));
+                    plugin.logWarning("Failed to regenerate world: " + e.getMessage());
+                    e.printStackTrace();
+                    plugin.setResetInProgress(false);
+                    Bukkit.broadcast(Component.text("Welt-Generierung fehlgeschlagen! Prüfe die Konsole.",
+                            NamedTextColor.RED));
                 }
             });
         });
@@ -297,6 +308,9 @@ public class FullResetCommand implements CommandExecutor {
                 return;
             }
             
+            // Ensure the data directory exists so the server can write raids.dat etc. immediately
+            new File(Bukkit.getWorldContainer(), worldName + "/data").mkdirs();
+            
             plugin.logInfo("Overworld created successfully!");
             
             // Create the Nether dimension for this world
@@ -307,6 +321,7 @@ public class FullResetCommand implements CommandExecutor {
             World netherWorld = netherCreator.createWorld();
             
             if (netherWorld != null) {
+                new File(Bukkit.getWorldContainer(), worldName + "_nether/data").mkdirs();
                 netherWorld.setKeepSpawnInMemory(false);
                 plugin.logInfo("Nether dimension created successfully!");
             } else {
@@ -321,6 +336,7 @@ public class FullResetCommand implements CommandExecutor {
             World endWorld = endCreator.createWorld();
             
             if (endWorld != null) {
+                new File(Bukkit.getWorldContainer(), worldName + "_the_end/data").mkdirs();
                 endWorld.setKeepSpawnInMemory(false);
                 plugin.logInfo("End dimension created successfully!");
             } else {
@@ -1075,10 +1091,16 @@ public class FullResetCommand implements CommandExecutor {
     /**
      * Recursively delete a world folder using NIO for better error handling
      */
-    private void deleteWorldFolder(File worldFolder) {
+    /**
+     * Delete a world folder recursively.
+     *
+     * @return {@code true} if the folder was fully deleted (or never existed),
+     *         {@code false} if any file could not be removed.
+     */
+    private boolean deleteWorldFolder(File worldFolder) {
         if (!worldFolder.exists()) {
-            plugin.logDebug("World folder doesn't exist: " + worldFolder.getName());
-            return;
+            plugin.logDebug("World folder doesn't exist (nothing to delete): " + worldFolder.getName());
+            return true;
         }
         
         plugin.logDebug("Deleting world folder: " + worldFolder.getAbsolutePath());
@@ -1098,9 +1120,11 @@ public class FullResetCommand implements CommandExecutor {
                 }
             });
             plugin.logDebug("Successfully deleted: " + worldFolder.getName());
+            return true;
         } catch (IOException e) {
-            plugin.logWarning("Failed to delete world folder: " + worldFolder.getName());
+            plugin.logWarning("Failed to delete world folder: " + worldFolder.getName() + " – " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 }

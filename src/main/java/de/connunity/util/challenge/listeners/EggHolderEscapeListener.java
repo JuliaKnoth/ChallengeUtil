@@ -32,6 +32,12 @@ public class EggHolderEscapeListener implements Listener {
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
         
+        // Don't kill players who are already in spectator or creative mode
+        if (player.getGameMode() == org.bukkit.GameMode.SPECTATOR || 
+            player.getGameMode() == org.bukkit.GameMode.CREATIVE) {
+            return;
+        }
+        
         // Check if custom end fight is active
         if (!endFightManager.isActive()) {
             return;

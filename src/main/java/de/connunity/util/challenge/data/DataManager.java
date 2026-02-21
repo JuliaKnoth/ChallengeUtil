@@ -7,6 +7,12 @@ import org.bukkit.plugin.Plugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Manages persistent data for timer and world state
@@ -16,6 +22,11 @@ public class DataManager {
     private final Plugin plugin;
     private File dataFile;
     private FileConfiguration dataConfig;
+
+    // Runtime caches to reduce repeated YAML path lookups in hot event paths
+    private final Map<String, Boolean> challengeCache = new HashMap<>();
+    private final Map<UUID, String> playerTeamCache = new HashMap<>();
+    private final Map<String, Set<UUID>> teamPlayersCache = new HashMap<>();
     
     public DataManager(Plugin plugin) {
         this.plugin = plugin;
@@ -37,6 +48,7 @@ public class DataManager {
         }
         
         dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+        rebuildRuntimeCaches();
         
         // Initialize default gamerules if not present
         initializeDefaultGamerules();
@@ -47,7 +59,41 @@ public class DataManager {
      */
     public void reloadData() {
         dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+        rebuildRuntimeCaches();
         ((ChallengeUtil) plugin).logDebug("Data configuration reloaded from disk");
+    }
+
+    /**
+     * Rebuild in-memory runtime caches from data.yml state
+     */
+    private void rebuildRuntimeCaches() {
+        challengeCache.clear();
+        playerTeamCache.clear();
+        teamPlayersCache.clear();
+
+        org.bukkit.configuration.ConfigurationSection challengesSection = dataConfig.getConfigurationSection("challenges");
+        if (challengesSection != null) {
+            for (String challengeName : challengesSection.getKeys(false)) {
+                challengeCache.put(challengeName, challengesSection.getBoolean(challengeName));
+            }
+        }
+
+        org.bukkit.configuration.ConfigurationSection teamsSection = dataConfig.getConfigurationSection("teams");
+        if (teamsSection != null) {
+            for (String uuidString : teamsSection.getKeys(false)) {
+                String team = teamsSection.getString(uuidString);
+                if (team == null || team.isEmpty()) {
+                    continue;
+                }
+                try {
+                    UUID playerId = UUID.fromString(uuidString);
+                    playerTeamCache.put(playerId, team);
+                    teamPlayersCache.computeIfAbsent(team, key -> new HashSet<>()).add(playerId);
+                } catch (IllegalArgumentException ignored) {
+                    // Skip invalid UUID entries
+                }
+            }
+        }
     }
     
     /**
@@ -255,6 +301,7 @@ public class DataManager {
         dataConfig.set("gamerules", null);
         dataConfig.set("challenges", null);
         dataConfig.set("challenge-settings", null);
+        challengeCache.clear();
         save();
     }
     
@@ -263,6 +310,7 @@ public class DataManager {
      */
     public void saveChallenge(String challengeName, boolean value) {
         dataConfig.set("challenges." + challengeName, value);
+        challengeCache.put(challengeName, value);
         save();
     }
     
@@ -278,10 +326,10 @@ public class DataManager {
      * Get saved challenge value (returns null if not set)
      */
     public Boolean getSavedChallenge(String challengeName) {
-        if (!dataConfig.contains("challenges." + challengeName)) {
+        if (!challengeCache.containsKey(challengeName)) {
             return null;
         }
-        return dataConfig.getBoolean("challenges." + challengeName);
+        return challengeCache.get(challengeName);
     }
     
     /**
@@ -305,10 +353,7 @@ public class DataManager {
      * Get all saved challenge names
      */
     public java.util.Set<String> getSavedChallengeNames() {
-        if (!dataConfig.contains("challenges")) {
-            return new java.util.HashSet<>();
-        }
-        return dataConfig.getConfigurationSection("challenges").getKeys(false);
+        return new HashSet<>(challengeCache.keySet());
     }
     
     /**
@@ -316,6 +361,24 @@ public class DataManager {
      */
     public void setPlayerTeam(java.util.UUID playerId, String team) {
         dataConfig.set("teams." + playerId.toString(), team);
+
+        if (team == null) {
+            removePlayerTeam(playerId);
+            return;
+        }
+
+        String oldTeam = playerTeamCache.put(playerId, team);
+        if (oldTeam != null && !oldTeam.equals(team)) {
+            Set<UUID> oldTeamPlayers = teamPlayersCache.get(oldTeam);
+            if (oldTeamPlayers != null) {
+                oldTeamPlayers.remove(playerId);
+                if (oldTeamPlayers.isEmpty()) {
+                    teamPlayersCache.remove(oldTeam);
+                }
+            }
+        }
+        teamPlayersCache.computeIfAbsent(team, key -> new HashSet<>()).add(playerId);
+
         save();
     }
     
@@ -323,7 +386,7 @@ public class DataManager {
      * Get a player's team (returns null if not set)
      */
     public String getPlayerTeam(java.util.UUID playerId) {
-        return dataConfig.getString("teams." + playerId.toString());
+        return playerTeamCache.get(playerId);
     }
     
     /**
@@ -331,6 +394,18 @@ public class DataManager {
      */
     public void removePlayerTeam(java.util.UUID playerId) {
         dataConfig.set("teams." + playerId.toString(), null);
+
+        String oldTeam = playerTeamCache.remove(playerId);
+        if (oldTeam != null) {
+            Set<UUID> oldTeamPlayers = teamPlayersCache.get(oldTeam);
+            if (oldTeamPlayers != null) {
+                oldTeamPlayers.remove(playerId);
+                if (oldTeamPlayers.isEmpty()) {
+                    teamPlayersCache.remove(oldTeam);
+                }
+            }
+        }
+
         save();
     }
     
@@ -338,28 +413,11 @@ public class DataManager {
      * Get all players in a specific team
      */
     public java.util.Set<java.util.UUID> getPlayersInTeam(String team) {
-        java.util.Set<java.util.UUID> players = new java.util.HashSet<>();
-        if (!dataConfig.contains("teams")) {
-            return players;
+        Set<UUID> players = teamPlayersCache.get(team);
+        if (players == null || players.isEmpty()) {
+            return Collections.emptySet();
         }
-        
-        org.bukkit.configuration.ConfigurationSection teamsSection = dataConfig.getConfigurationSection("teams");
-        if (teamsSection == null) {
-            return players;
-        }
-        
-        for (String uuidString : teamsSection.getKeys(false)) {
-            String playerTeam = teamsSection.getString(uuidString);
-            if (team.equals(playerTeam)) {
-                try {
-                    players.add(java.util.UUID.fromString(uuidString));
-                } catch (IllegalArgumentException e) {
-                    // Invalid UUID, skip
-                }
-            }
-        }
-        
-        return players;
+        return Collections.unmodifiableSet(players);
     }
     
     /**
@@ -367,6 +425,8 @@ public class DataManager {
      */
     public void clearTeams() {
         dataConfig.set("teams", null);
+        playerTeamCache.clear();
+        teamPlayersCache.clear();
         save();
     }
     
@@ -405,6 +465,21 @@ public class DataManager {
         // Remove all offline players from teams
         for (String uuidString : uuidsToRemove) {
             dataConfig.set("teams." + uuidString, null);
+            try {
+                UUID playerId = UUID.fromString(uuidString);
+                String oldTeam = playerTeamCache.remove(playerId);
+                if (oldTeam != null) {
+                    Set<UUID> oldTeamPlayers = teamPlayersCache.get(oldTeam);
+                    if (oldTeamPlayers != null) {
+                        oldTeamPlayers.remove(playerId);
+                        if (oldTeamPlayers.isEmpty()) {
+                            teamPlayersCache.remove(oldTeam);
+                        }
+                    }
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Invalid UUIDs are already being cleaned from file; no cache entry expected
+            }
         }
         
         if (!uuidsToRemove.isEmpty()) {

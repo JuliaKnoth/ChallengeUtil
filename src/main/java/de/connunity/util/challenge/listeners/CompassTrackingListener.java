@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.connunityhunt.ConnunityHuntManager;
 import de.connunity.util.challenge.lang.LanguageManager;
 import de.connunity.util.challenge.manhunt.ManhuntManager;
 import org.bukkit.Material;
@@ -16,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handles compass right-click interactions for manhunt tracking
+ * Handles compass right-click interactions for manhunt and connunity hunt tracking
  */
 public class CompassTrackingListener implements Listener {
     
@@ -43,9 +44,10 @@ public class CompassTrackingListener implements Listener {
             return;
         }
         
-        // Check if manhunt mode is enabled
+        // Check if modes are enabled
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
         
         // Handle Team Race mode
         if (teamRaceEnabled != null && teamRaceEnabled) {
@@ -58,6 +60,44 @@ public class CompassTrackingListener implements Listener {
                 
                 // Switch tracked team
                 plugin.getTeamRaceManager().switchTrackedTeam(player);
+                
+                // Cancel the event to prevent normal compass behavior
+                event.setCancelled(true);
+                return;
+            }
+        }
+        
+        // Handle Connunity Hunt mode
+        if (connunityHuntEnabled != null && connunityHuntEnabled) {
+            // Check if player is a viewer
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            if (ConnunityHuntManager.TEAM_VIEWER.equals(team)) {
+                // Check if timer is running
+                if (!plugin.getTimerManager().isRunning() || plugin.getTimerManager().isPaused()) {
+                    return;
+                }
+                
+                ConnunityHuntManager connunityHuntManager = plugin.getConnunityHuntManager();
+                
+                // Try to use the compass charge
+                boolean success = connunityHuntManager.useCompassCharge(player);
+                
+                if (success) {
+                    player.sendMessage(lang.getComponent("compass.charge-activated"));
+                } else {
+                    // Get remaining cooldown time and show in chat
+                    long remainingTime = connunityHuntManager.getCompassCooldownRemaining(player);
+                    if (remainingTime > 0) {
+                        long seconds = (remainingTime / 1000) % 60;
+                        long minutes = (remainingTime / 1000) / 60;
+                        Map<String, String> placeholders = new HashMap<>();
+                        placeholders.put("time", String.format("%d:%02d", minutes, seconds));
+                        player.sendMessage(lang.getComponent("compass.cooldown", placeholders));
+                    } else {
+                        player.sendMessage(lang.getComponent("compass.not-charged"));
+                    }
+                    player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.8f);
+                }
                 
                 // Cancel the event to prevent normal compass behavior
                 event.setCancelled(true);

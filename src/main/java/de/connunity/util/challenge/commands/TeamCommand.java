@@ -47,6 +47,25 @@ public class TeamCommand implements CommandExecutor, TabCompleter {
         // Check which mode is enabled
         Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
         Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        
+        // If Connunity Hunt is enabled, teams are auto-assigned
+        if (connunityHuntEnabled != null && connunityHuntEnabled) {
+            player.sendMessage(Component.text("ⓘ Connunity Hunt: Teams are automatically assigned!", net.kyori.adventure.text.format.NamedTextColor.AQUA));
+            player.sendMessage(Component.text("  Streamer team: vup.creator or challenge.creator permission", net.kyori.adventure.text.format.NamedTextColor.GOLD));
+            player.sendMessage(Component.text("  Viewer team: everyone else", net.kyori.adventure.text.format.NamedTextColor.BLUE));
+            
+            // Show player their current team
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            if (team != null) {
+                net.kyori.adventure.text.format.TextColor teamColor = plugin.getConnunityHuntManager().getTeamColor(team);
+                player.sendMessage(Component.text(""));
+                player.sendMessage(Component.text("Your team: ", net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                    .append(Component.text(team, teamColor, TextDecoration.BOLD)));
+            }
+            
+            return true;
+        }
         
         if ((manhuntEnabled == null || !manhuntEnabled) && (teamRaceEnabled == null || !teamRaceEnabled)) {
             player.sendMessage(lang.getComponent("team.no-mode-active"));

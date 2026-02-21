@@ -4,6 +4,7 @@ import de.connunity.util.challenge.commands.*;
 import de.connunity.util.challenge.data.DataManager;
 import de.connunity.util.challenge.integration.PlaceholderAPIExpansion;
 import de.connunity.util.challenge.lang.LanguageManager;
+import de.connunity.util.challenge.listeners.BedExplosionPreventionListener;
 import de.connunity.util.challenge.listeners.BlockBreakRandomizerListener;
 import de.connunity.util.challenge.listeners.CompassProtectionListener;
 import de.connunity.util.challenge.listeners.CompassTrackingListener;
@@ -17,12 +18,14 @@ import de.connunity.util.challenge.listeners.EndermanSpawnPreventionListener;
 import de.connunity.util.challenge.listeners.EndPortalPreventionListener;
 import de.connunity.util.challenge.listeners.FriendlyFireItemListener;
 import de.connunity.util.challenge.listeners.GameStateRestrictionListener;
+import de.connunity.util.challenge.listeners.HeadstartRestrictionListener;
 import de.connunity.util.challenge.listeners.KeepRNGListener;
 import de.connunity.util.challenge.listeners.TimedRandomItemListener;
 import de.connunity.util.challenge.listeners.HostControlGUIListener;
 import de.connunity.util.challenge.listeners.HostControlItemListener;
 import de.connunity.util.challenge.listeners.ManhuntChatListener;
 import de.connunity.util.challenge.listeners.ManhuntMovementListener;
+import de.connunity.util.challenge.listeners.ConnunityHuntMovementListener;
 import de.connunity.util.challenge.listeners.ManhuntTeamListener;
 import de.connunity.util.challenge.listeners.PlayerDeathListener;
 import de.connunity.util.challenge.listeners.PlayerJoinListener;
@@ -34,7 +37,10 @@ import de.connunity.util.challenge.listeners.SettingsGUIListener;
 import de.connunity.util.challenge.listeners.TeamRaceEnderDragonListener;
 import de.connunity.util.challenge.listeners.TeamRaceKillListener;
 import de.connunity.util.challenge.listeners.TeamRaceTeamListener;
+import de.connunity.util.challenge.listeners.TeamSelectionGUIListener;
+import de.connunity.util.challenge.listeners.TeamSelectionItemListener;
 import de.connunity.util.challenge.listeners.WaitingRoomListener;
+import de.connunity.util.challenge.connunityhunt.ConnunityHuntManager;
 import de.connunity.util.challenge.endfight.CustomEndFightManager;
 import de.connunity.util.challenge.manhunt.ManhuntManager;
 import de.connunity.util.challenge.teamrace.TeamRaceManager;
@@ -62,12 +68,14 @@ public class ChallengeUtil extends JavaPlugin {
     private LanguageManager languageManager;
     private ManhuntManager manhuntManager;
     private TeamRaceManager teamRaceManager;
+    private ConnunityHuntManager connunityHuntManager;
     private CustomEndFightManager customEndFightManager;
     private PlaceholderAPIExpansion placeholderAPIExpansion;
     private ChunkItemChallengeListener chunkItemChallengeListener;
     private FriendlyFireItemListener friendlyFireItemListener;
     private TimedRandomItemListener timedRandomItemListener;
     private BlockBreakRandomizerListener blockBreakRandomizerListener;
+    private TeamSelectionItemListener teamSelectionItemListener;
     private VersionChecker versionChecker;
     private FullResetCommand fullResetCommand;
     private boolean resetInProgress = false;
@@ -136,6 +144,9 @@ public class ChallengeUtil extends JavaPlugin {
         // Initialize team race manager
         teamRaceManager = new TeamRaceManager(this);
 
+        // Initialize connunity hunt manager
+        connunityHuntManager = new ConnunityHuntManager(this);
+
         // Initialize custom end fight manager
         customEndFightManager = new CustomEndFightManager(this);
 
@@ -159,6 +170,9 @@ public class ChallengeUtil extends JavaPlugin {
 
         // Initialize block break randomizer listener
         blockBreakRandomizerListener = new BlockBreakRandomizerListener(this);
+        
+        // Initialize team selection item listener
+        teamSelectionItemListener = new TeamSelectionItemListener(this);
 
         // Register commands
         getCommand("start").setExecutor(new StartCommand(this, timerManager));
@@ -169,6 +183,7 @@ public class ChallengeUtil extends JavaPlugin {
         getCommand("join").setExecutor(new JoinCommand(this));
         getCommand("settings").setExecutor(new SettingsCommand(this));
         getCommand("team").setExecutor(new TeamCommand(this));
+        getCommand("spectator").setExecutor(new SpectatorCommand(this));
 
         // Register listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
@@ -182,6 +197,8 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ManhuntTeamListener(this), this);
         getServer().getPluginManager().registerEvents(new ManhuntChatListener(this), this);
         getServer().getPluginManager().registerEvents(new ManhuntMovementListener(this), this);
+        getServer().getPluginManager().registerEvents(new ConnunityHuntMovementListener(this), this);
+        getServer().getPluginManager().registerEvents(new HeadstartRestrictionListener(this), this);
         getServer().getPluginManager().registerEvents(new EnderDragonDeathListener(this), this);
         getServer().getPluginManager().registerEvents(new DragonEggPickupListener(this, customEndFightManager), this);
         getServer().getPluginManager().registerEvents(new EndFightDamageListener(this, customEndFightManager), this);
@@ -192,6 +209,8 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new TeamRaceTeamListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceEnderDragonListener(this), this);
         getServer().getPluginManager().registerEvents(new TeamRaceKillListener(this), this);
+        getServer().getPluginManager().registerEvents(new TeamSelectionGUIListener(this), this);
+        getServer().getPluginManager().registerEvents(teamSelectionItemListener, this);
         getServer().getPluginManager().registerEvents(new CompassTrackingListener(this), this);
         getServer().getPluginManager().registerEvents(new CompassProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new WaitingRoomListener(this), this);
@@ -202,13 +221,18 @@ public class ChallengeUtil extends JavaPlugin {
         getServer().getPluginManager().registerEvents(timedRandomItemListener, this);
         getServer().getPluginManager().registerEvents(blockBreakRandomizerListener, this);
         getServer().getPluginManager().registerEvents(new KeepRNGListener(this), this);
+        getServer().getPluginManager().registerEvents(new BedExplosionPreventionListener(this), this);
 
         // Apply gamerules to waiting room on startup
         Bukkit.getScheduler().runTaskLater(this, () -> applyWaitingRoomGameRules(), 20L);
 
-        // Load speedrun world if it exists on disk (bug fix for world not recognized on
-        // restart)
-        Bukkit.getScheduler().runTaskLater(this, () -> loadSpeedrunWorldIfExists(), 20L);
+        // Load speedrun world if it exists on disk (bug fix for world not recognized on restart).
+        // Skip this when fullreset-on-startup is enabled – there is no point loading the world
+        // just to delete it again a few ticks later, and keeping the world loaded longer makes
+        // Windows file-lock issues during the subsequent deletion more likely.
+        if (!getConfig().getBoolean("reset.fullreset-on-startup", false)) {
+            Bukkit.getScheduler().runTaskLater(this, () -> loadSpeedrunWorldIfExists(), 20L);
+        }
 
         // Apply saved gamerules to speedrun world on startup
         Bukkit.getScheduler().runTaskLater(this, () -> applySpeedrunWorldSavedGameRules(), 30L);
@@ -271,6 +295,10 @@ public class ChallengeUtil extends JavaPlugin {
         return teamRaceManager;
     }
 
+    public ConnunityHuntManager getConnunityHuntManager() {
+        return connunityHuntManager;
+    }
+
     public CustomEndFightManager getCustomEndFightManager() {
         return customEndFightManager;
     }
@@ -289,6 +317,10 @@ public class ChallengeUtil extends JavaPlugin {
 
     public BlockBreakRandomizerListener getBlockBreakRandomizerListener() {
         return blockBreakRandomizerListener;
+    }
+    
+    public TeamSelectionItemListener getTeamSelectionItemListener() {
+        return teamSelectionItemListener;
     }
 
     public VersionChecker getVersionChecker() {

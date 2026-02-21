@@ -590,7 +590,7 @@ public class SettingsGUIListener implements Listener {
             // Row 0: Team Modes (top row)
             case 1: challengeName = "manhunt_mode"; break;
             case 2: challengeName = "team_race_mode"; break;
-            // case 3 is intentionally skipped - custom_end_fight is now auto-managed
+            case 3: challengeName = "connunity_hunt_mode"; break;
             
             // Row 2: RNG based stuff
             case 19: challengeName = "chunk_items"; break;
@@ -672,10 +672,10 @@ public class SettingsGUIListener implements Listener {
         
         boolean newValue = !currentValue;
         
-        // MUTUAL EXCLUSIVITY: Manhunt and Team Race cannot both be enabled
+        // MUTUAL EXCLUSIVITY: Manhunt, Team Race, and Connunity Hunt cannot be enabled together
         if (newValue) { // Only check if we're enabling a mode
             if (challengeName.equals("manhunt_mode")) {
-                // If enabling Manhunt, disable Team Race
+                // If enabling Manhunt, disable Team Race and Connunity Hunt
                 Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
                 if (teamRaceEnabled != null && teamRaceEnabled) {
                     plugin.getDataManager().saveChallenge("team_race_mode", false);
@@ -683,16 +683,30 @@ public class SettingsGUIListener implements Listener {
                     placeholders.put("mode", "Manhunt Race");
                     player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
                 }
+                Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+                if (connunityHuntEnabled != null && connunityHuntEnabled) {
+                    plugin.getDataManager().saveChallenge("connunity_hunt_mode", false);
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("mode", "Connunity Hunt");
+                    player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
+                }
                 // Reset teams when switching to Manhunt mode
                 plugin.getDataManager().clearTeams();
                 player.sendMessage(lang.getComponent("settings.teams-reset"));
             } else if (challengeName.equals("team_race_mode")) {
-                // If enabling Team Race, disable Manhunt
+                // If enabling Team Race, disable Manhunt and Connunity Hunt
                 Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
                 if (manhuntEnabled != null && manhuntEnabled) {
                     plugin.getDataManager().saveChallenge("manhunt_mode", false);
                     Map<String, String> placeholders = new HashMap<>();
                     placeholders.put("mode", "Manhunt");
+                    player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
+                }
+                Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+                if (connunityHuntEnabled != null && connunityHuntEnabled) {
+                    plugin.getDataManager().saveChallenge("connunity_hunt_mode", false);
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("mode", "Connunity Hunt");
                     player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
                 }
                 // Reset teams when switching to Team Race mode
@@ -701,16 +715,41 @@ public class SettingsGUIListener implements Listener {
                 
                 // Automatically enable custom_end_fight when team race is enabled
                 plugin.getDataManager().saveChallenge("custom_end_fight", true);
+                
+                // Give team selection menu items to all players
+                plugin.getTeamRaceManager().giveTeamMenuItems();
+            } else if (challengeName.equals("connunity_hunt_mode")) {
+                // If enabling Connunity Hunt, disable Manhunt and Team Race
+                Boolean manhuntEnabled = plugin.getDataManager().getSavedChallenge("manhunt_mode");
+                if (manhuntEnabled != null && manhuntEnabled) {
+                    plugin.getDataManager().saveChallenge("manhunt_mode", false);
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("mode", "Manhunt");
+                    player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
+                }
+                Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+                if (teamRaceEnabled != null && teamRaceEnabled) {
+                    plugin.getDataManager().saveChallenge("team_race_mode", false);
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("mode", "Manhunt Race");
+                    player.sendMessage(lang.getComponent("settings.mode-switched-warning", placeholders));
+                }
+                // Reset teams when switching to Connunity Hunt mode
+                plugin.getDataManager().clearTeams();
+                player.sendMessage(lang.getComponent("settings.teams-reset"));
             }
         } else {
             // When disabling a mode, also reset teams
-            if (challengeName.equals("manhunt_mode") || challengeName.equals("team_race_mode")) {
+            if (challengeName.equals("manhunt_mode") || challengeName.equals("team_race_mode") || challengeName.equals("connunity_hunt_mode")) {
                 plugin.getDataManager().clearTeams();
                 player.sendMessage(lang.getComponent("settings.teams-reset"));
                 
                 // Automatically disable custom_end_fight when team race is disabled
                 if (challengeName.equals("team_race_mode")) {
                     plugin.getDataManager().saveChallenge("custom_end_fight", false);
+                    
+                    // Remove team selection menu items from all players
+                    plugin.getTeamRaceManager().removeTeamMenuItems();
                 }
             }
         }

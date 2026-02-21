@@ -61,10 +61,23 @@ start:
   min-teams-needed: "<yellow>  At least 2 teams required. Current: {count}"
   max-teams-exceeded: "<yellow>  Maximum 10 teams allowed. Current: {count}"
   
+  # Connunity Hunt mode
+  connunityhunt-no-teams-header: "<red>✗ Cannot start! Connunity Hunt requires players in both teams."
+  connunityhunt-need-both-teams: "<yellow>  At least one Streamer and one Viewer needed."
+  connunityhunt-announcement-header: "<gray><strikethrough>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  connunityhunt-title: "<gold><bold>  CONNUNITY HUNT"
+  connunityhunt-team-streamer: "<gray>  Team <#9146ff><bold>Streamer<gray>: <yellow>{count} player{plural}"
+  connunityhunt-team-viewer: "<gray>  Team <gray><bold>Viewer<gray>: <yellow>{count} player{plural}"
+  connunityhunt-announcement-footer: "<gray><strikethrough>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  
   # Hunter restrictions
   hunter-restrictions-header: "<gold><bold>⚠ HUNTER Restrictions:"
   hunter-headstart: "<yellow>  • Runners have 2 minutes head start"
   hunter-compass-unlock: "<gray>  • After 10 minutes: Compass"
+  
+  # Viewer restrictions
+  viewer-restrictions-header: "<gray><bold>⚠ VIEWER Restrictions:"
+  viewer-headstart: "<yellow>  • Streamers have 2 minutes head start"
 
 # Pause Command
 pause:
@@ -125,6 +138,12 @@ team:
   teamrace-list-players: "<gray> ({count} players)"
   teamrace-list-usage: "<yellow>Use <gold>/team <TeamName><yellow> to join"
   teamrace-list-example: "<gray>Example: <white>/team Red"
+  
+  # Connunity Hunt mode
+  connunityhunt-auto-assigned: "<green>✓ You have been automatically assigned to team {team}!"
+  connunityhunt-streamer-team: "<#9146ff><bold>Streamer"
+  connunityhunt-viewer-team: "<gray><bold>Viewer"
+  connunityhunt-no-switching: "<gray>  Teams are auto-assigned based on permissions."
 
 # Settings Command
 settings:
@@ -138,6 +157,13 @@ join:
   world-not-exist-hint: "<yellow>Please wait for an admin to run /fullreset."
   watch-mode: "<gray>Watch mode activated 👁"
   good-luck-emoji: "<gold>Good luck! ⚡"
+
+# Spectator Command
+spectator:
+  no-permission: "<red>✗ You need the challenge.host permission to use this command!"
+  not-connunity-hunt: "<red>✗ This command is only available in Connunity Hunt mode!"
+  success: "<green>✓ You are now a spectator!"
+  info: "<gray>  You're not part of any team and can freely observe the game."
 
 # Full Reset Command
 fullreset:
@@ -294,6 +320,26 @@ manhunt:
   hunter-get-compass-title: "<aqua><bold>✓ COMPASS UNLOCKED!"
   hunter-get-compass-sub: "<yellow>Right-click to track!"
 
+# Connunity Hunt
+connunityhunt:
+  blindness-over: "<green>✓ Head start over! You can now move and hunt!"
+  blindness-remaining: "<yellow>⏳ Head start active! {seconds} seconds remaining..."
+  compass-charged: "<green>✨ Compass is charged!"
+  streamers-glowing: "<aqua>✨ Streamers are now glowing!"
+  you-are-glowing: "<red><bold>⚠ You are glowing!"
+  streamers-in-nether: "<light_purple>✦ Streamers are in the Nether"
+  streamers-in-end: "<dark_purple>✦ Streamers are in the End"
+  streamers-in-overworld: "<green>✦ Streamers are in the Overworld"
+  
+  # Compass messages
+  compass-name: "<#9146ff><bold>Streamer-Tracker"
+  compass-charged-status: "<green>✓ Charged!"
+  compass-charging-status: "<yellow>⏳ Charging..."
+  compass-ready-hint: "<gray>Right-click when ready"
+  compass-track-streamers: "<gray>Right-click to track streamers"
+  compass-show-streamers: "<gray>Right-click to reveal streamers."
+  compass-loading: "<yellow>⏳ Loading..."
+
 # Manhunt Race
 teamrace:
   team-win: "<gold><bold>═══════════════════════════════\n{team}<bold> HAS WON!\n<yellow>The Ender Dragon has been defeated!\n<gold><bold>═══════════════════════════════"
@@ -347,6 +393,8 @@ placeholders:
   runner-prefix: "<light_purple><bold>[RUNNER] "
   hunter-prefix: "<gold><bold>[HUNTER] "
   spectator-prefix: "<gray>[SPECTATOR] "
+  streamer-prefix: "<#9146ff><bold>[STREAMER] "
+  viewer-prefix: "<gray><bold>[VIEWER] "
 
 # Manhunt Manager
 manhunt:
@@ -371,11 +419,14 @@ manhunt:
 
 # Manhunt Race Manager
 teamrace:
-  team-won-title: "<bold>TEAM {team} WON!"
+  you-win-title: "<green><bold>YOU WIN!"
+  you-lose-title: "<red><bold>YOU LOSE!"
   dragon-defeated-subtitle: "<gray>defeated the Ender Dragon!"
   game-over-divider: "<gold><strikethrough>═══════════════════════════════════"
   game-over-title: "<bold>         GAME OVER         "
   winner-label: "<gray>    Winner: "
+  your-team-won: "<green>Your team defeated the Ender Dragon!"
+  enemy-team-won: "<red>Team {team} defeated the Ender Dragon first!"
   
   # Compass messages
   compass-name: "<bold>Team-Tracker"
@@ -386,6 +437,22 @@ teamrace:
   compass-switch-hint: "<yellow>Right-click to switch teams"
   switched-tracking: "<gold>Now tracking: "
   compass-now-points-to-portal: "<light_purple><bold>⚠ Compass now points to the End Portal! ⚠"
+  
+  # Team selection menu
+  menu-item:
+    name: "<gold><bold>⚔ Team Selection ⚔"
+    lore1: "<gray>Open the team selection menu"
+    lore2: "<gray>to choose your team!"
+    hint: "<yellow>Right-click to open"
+    mode-not-active: "<red>Team Race mode is not active!"
+  
+  # Team selection GUI
+  gui:
+    title: "<gold><bold>Choose Your Team"
+    members: "<gray>Members: <white>{count}"
+    current-team: "<green><bold>✓ Current Team"
+    click-to-join: "<yellow>Click to join!"
+    already-in-team: "<yellow>You are already in this team!"
 
 # Player Death Messages
 death:
@@ -394,15 +461,18 @@ death:
   respawn-disabled-spectator: "<gray>Respawn disabled - you are now a spectator"
   divider: "<dark_red>═══════════════════════════════════"
   
-  # Manhunt victory
-  hunters-won-title: "<gold><bold>TEAM HUNTERS WON!"
-  hunters-won-subtitle: "<yellow>All runners have been eliminated"
-  runners-won-title: "<light_purple><bold>TEAM RUNNERS WON!"
-  runners-won-subtitle: "<dark_purple>The Ender Dragon has been slain!"
+  # Win/Lose messages
+  you-win-title: "<green><bold>YOU WIN!"
+  you-lose-title: "<red><bold>YOU LOSE!"
+  hunters-eliminated-subtitle: "<yellow>All runners have been eliminated"
+  dragon-slain-subtitle: "<light_purple>The Ender Dragon has been slain!"
+  streamers-eliminated-subtitle: "<yellow>All streamers have been eliminated"
   
   # Team labels
   winner-hunters: "HUNTERS"
   winner-runners: "RUNNERS"
+  winner-viewers: "VIEWERS"
+  winner-streamers: "STREAMERS"
 
 # Ender Dragon Death
 dragon:
@@ -410,6 +480,10 @@ dragon:
   hunters-won-subtitle: "<yellow>All runners have been eliminated"
   runners-won-title: "<light_purple><bold>TEAM RUNNERS WON!"
   runners-won-subtitle: "<dark_purple>The Ender Dragon has been slain!"
+  everyone-wins-title: "<gold><bold>ENDER DRAGON DEFEATED!"
+  everyone-wins-subtitle: "<yellow>Everyone wins!"
+  dragon-defeated-message: "<yellow>The Ender Dragon has been defeated!"
+  everyone-wins-message: "<green><bold>Everyone wins!"
   game-over: "<bold>         GAME OVER         "
   winner: "<gray>    Winner: "
 
@@ -421,6 +495,8 @@ chunkitem:
 # Movement/PvP Restrictions
 restrictions:
   cannot-move-yet: "<yellow>⚠ You cannot move yet! Wait <red>{seconds}s<yellow> (Blindness period)"
+  cannot-break-blocks-yet: "<yellow>⚠ You cannot break blocks yet! Wait <red>{seconds}s<yellow> (Head start period)"
+  cannot-pickup-items-yet: "<yellow>⚠ You cannot pick up items yet! Wait <red>{seconds}s<yellow> (Head start period)"
   pvp-disabled: "<red>✗ PvP is disabled until the challenge starts!"
   cannot-damage-teammate: "<red>✗ You cannot damage your teammate!"
   cannot-damage-teammate-teamrace: "<red>✗ Du kannst deinen Teamkollegen nicht schaden!"
@@ -661,7 +737,7 @@ gui:
       
       custom_end_fight: "Chase the Egg - Custom End Fight"
       custom_end_fight_hint1: "<aqua><italic>Dragon egg must be collected"
-      custom_end_fight_hint2: "<gray><italic>Egg holder becomes boss with 40 HP"
+      custom_end_fight_hint2: "<gray><italic>Egg holder becomes boss with 60 HP"
       custom_end_fight_hint3: "<gold><italic>All others hunt the egg holder"
       
       team_race_mode: "Manhunt Race - 2-10 Teams"
@@ -670,6 +746,14 @@ gui:
       teamrace_hint3: "<gold><italic>Compasses point to nearest team"
       teamrace_warning_manhunt: "<red><bold>⚠ Manhunt Mode is active!"
       teamrace_auto_disable: "<yellow><italic>Will be automatically disabled"
+      
+      connunity_hunt_mode: "Connunity Hunt - Streamer vs Viewer"
+      connunityhunt_hint1: "<aqua><italic>Auto teams by permission"
+      connunityhunt_hint2: "<gold><italic>Streamer: vup.creator / challenge.creator"
+      connunityhunt_hint3: "<blue><italic>Viewer: everyone else"
+      connunityhunt_warning_manhunt: "<red><bold>⚠ Manhunt Mode is active!"
+      connunityhunt_warning_teamrace: "<red><bold>⚠ Manhunt Race is active!"
+      connunityhunt_auto_disable: "<yellow><italic>Will be automatically disabled"
       
       chunk_items: "Receive random item per chunk"
       block_break_randomizer: "Block Break Randomizer"
@@ -713,10 +797,12 @@ endfight:
   chase-egg-subtitle: "<yellow>Collect the Dragon Egg to become the boss!"
   boss-bar-title: "<light_purple><bold>🥚 {player}"
   you-are-boss: "<light_purple><bold>⚡ YOU ARE THE EGG HOLDER!"
-  survive-instructions: "<yellow>  Survive with 40 HP! All others are hunting you!"
+  survive-instructions: "<yellow>  Survive with 60 HP! All others are hunting you!"
   defeat-boss: "<gold><bold>⚔ DEFEAT {player}!"
-  team-won: "<gold><bold>✓ TEAM {team} WON!"
-  team-won-subtitle: "<yellow>They held the egg for 10 minutes!"
+  you-win-title: "<green><bold>YOU WIN!"
+  you-lose-title: "<red><bold>YOU LOSE!"
+  your-team-won: "<green>Your team escaped with the Dragon Egg!"
+  enemy-team-won: "<red>Team {team} escaped with the Dragon Egg!"
   team-escaped: "<yellow>They escaped to the Overworld with the Dragon Egg!"
   new-holder: "<light_purple><bold>⚡ {player} is now the Egg Holder!"
   team-time-remaining: "<yellow>  Team {team} needs to survive for {time} more!"

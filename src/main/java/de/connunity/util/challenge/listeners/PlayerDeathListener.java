@@ -4,6 +4,7 @@ import de.connunity.util.challenge.ChallengeUtil;
 import de.connunity.util.challenge.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -41,7 +42,9 @@ public class PlayerDeathListener implements Listener {
         
         // Check if custom end fight is active and this is the egg holder dying
         Boolean customEndFightEnabled = plugin.getDataManager().getSavedChallenge("custom_end_fight");
-        if (customEndFightEnabled != null && customEndFightEnabled && isTimerRunning && !isTimerPaused) {
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (customEndFightEnabled != null && customEndFightEnabled && 
+            teamRaceEnabled != null && teamRaceEnabled && isTimerRunning && !isTimerPaused) {
             if (plugin.getCustomEndFightManager().isActive() && 
                 plugin.getCustomEndFightManager().getEggHolder() != null &&
                 plugin.getCustomEndFightManager().getEggHolder().equals(player)) {
@@ -89,26 +92,75 @@ public class PlayerDeathListener implements Listener {
             
             // If a runner dies, put them in spectator mode at their death location
             if ("runner".equals(team)) {
+                // Don't process death multiple times if already in spectator
+                if (player.getGameMode() == GameMode.SPECTATOR) {
+                    return;
+                }
+                
                 // Store death location
                 final org.bukkit.Location deathLocation = player.getLocation().clone();
                 
                 // Keep drops and experience as normal
                 event.setCancelled(false);
                 
-                // Set to spectator mode at death location with a short delay
+                // Set to spectator mode IMMEDIATELY to prevent death loops
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    // Teleport to death location and set spectator mode
-                    player.teleport(deathLocation);
-                    player.setGameMode(GameMode.SPECTATOR);
-                    
-                    player.sendMessage(lang.getComponent("death.divider"));
-                    player.sendMessage(lang.getComponent("death.you-are-dead"));
-                    player.sendMessage(lang.getComponent("death.now-spectator"));
-                    player.sendMessage(lang.getComponent("death.divider"));
-                    
-                    // Check if all runners are dead
-                    checkManhuntWinCondition();
-                }, 10L); // 10 ticks = 0.5 seconds delay
+                    // Don't set spectator if player is already spectator (prevent loops)
+                    if (player.getGameMode() != GameMode.SPECTATOR) {
+                        // Teleport to death location and set spectator mode
+                        player.teleport(deathLocation);
+                        player.setGameMode(GameMode.SPECTATOR);
+                        
+                        player.sendMessage(lang.getComponent("death.divider"));
+                        player.sendMessage(lang.getComponent("death.you-are-dead"));
+                        player.sendMessage(lang.getComponent("death.now-spectator"));
+                        player.sendMessage(lang.getComponent("death.divider"));
+                        
+                        // Check if all runners are dead
+                        checkManhuntWinCondition();
+                    }
+                }, 1L); // 1 tick delay (faster than 10 ticks to prevent death loops)
+                
+                return;
+            }
+        }
+        
+        // Check if connunity hunt mode is enabled and timer is running
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        
+        if (connunityHuntEnabled != null && connunityHuntEnabled && isTimerRunning && !isTimerPaused) {
+            String team = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            
+            // If a streamer dies, put them in spectator mode at their death location
+            if ("Streamer".equals(team)) {
+                // Don't process death multiple times if already in spectator
+                if (player.getGameMode() == GameMode.SPECTATOR) {
+                    return;
+                }
+                
+                // Store death location
+                final org.bukkit.Location deathLocation = player.getLocation().clone();
+                
+                // Keep drops and experience as normal
+                event.setCancelled(false);
+                
+                // Set to spectator mode IMMEDIATELY to prevent death loops
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    // Don't set spectator if player is already spectator (prevent loops)
+                    if (player.getGameMode() != GameMode.SPECTATOR) {
+                        // Teleport to death location and set spectator mode
+                        player.teleport(deathLocation);
+                        player.setGameMode(GameMode.SPECTATOR);
+                        
+                        player.sendMessage(lang.getComponent("death.divider"));
+                        player.sendMessage(lang.getComponent("death.you-are-dead"));
+                        player.sendMessage(lang.getComponent("death.now-spectator"));
+                        player.sendMessage(lang.getComponent("death.divider"));
+                        
+                        // Check if all streamers are dead
+                        checkConnunityHuntWinCondition();
+                    }
+                }, 1L); // 1 tick delay (faster than 10 ticks to prevent death loops)
                 
                 return;
             }
@@ -118,6 +170,11 @@ public class PlayerDeathListener implements Listener {
         boolean allowRespawn = plugin.getConfig().getBoolean("challenge.allow-respawn", true);
         
         if (!allowRespawn) {
+            // Don't process death multiple times if already in spectator
+            if (player.getGameMode() == GameMode.SPECTATOR) {
+                return;
+            }
+            
             // Get speedrun world name
             String speedrunWorldName = plugin.getConfig().getString("world.speedrun-world", "speedrun_world");
             
@@ -125,11 +182,14 @@ public class PlayerDeathListener implements Listener {
             if (player.getWorld().getName().equals(speedrunWorldName)) {
                 // Schedule spectator mode change after respawn
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    player.setGameMode(GameMode.SPECTATOR);
-                    player.sendMessage(lang.getComponent("death.divider"));
-                    player.sendMessage(lang.getComponent("death.you-are-dead"));
-                    player.sendMessage(lang.getComponent("death.respawn-disabled-spectator"));
-                    player.sendMessage(lang.getComponent("death.divider"));
+                    // Don't set spectator if player is already spectator (prevent loops)
+                    if (player.getGameMode() != GameMode.SPECTATOR) {
+                        player.setGameMode(GameMode.SPECTATOR);
+                        player.sendMessage(lang.getComponent("death.divider"));
+                        player.sendMessage(lang.getComponent("death.you-are-dead"));
+                        player.sendMessage(lang.getComponent("death.respawn-disabled-spectator"));
+                        player.sendMessage(lang.getComponent("death.divider"));
+                    }
                 }, 1L);
             }
         }
@@ -159,49 +219,128 @@ public class PlayerDeathListener implements Listener {
     /**
      * Announce the winning team
      */
-    private void announceWinner(String team) {
+    private void announceWinner(String winningTeam) {
         // Stop the timer
         plugin.getTimerManager().stop();
         
         // Stop manhunt manager
         plugin.getManhuntManager().stop();
         
-        Component title;
         Component subtitle;
-        NamedTextColor color;
+        NamedTextColor winColor = NamedTextColor.GREEN;
+        NamedTextColor loseColor = NamedTextColor.RED;
         
-        if (team.equals("HUNTER")) {
-            title = lang.getComponent("death.hunters-won-title");
-            subtitle = lang.getComponent("death.hunters-won-subtitle");
-            color = NamedTextColor.GOLD;
+        if (winningTeam.equals("HUNTER")) {
+            subtitle = lang.getComponent("death.hunters-eliminated-subtitle");
         } else {
-            title = lang.getComponent("death.runners-won-title");
-            subtitle = lang.getComponent("death.runners-won-subtitle");
-            color = NamedTextColor.LIGHT_PURPLE;
+            subtitle = lang.getComponent("death.dragon-slain-subtitle");
         }
         
-        // Create title with timings
-        Title gameTitle = Title.title(
-            title,
-            subtitle,
-            Title.Times.times(
-                Duration.ofMillis(500),  // Fade in
-                Duration.ofSeconds(5),    // Stay
-                Duration.ofSeconds(2)     // Fade out
-            )
-        );
-        
-        // Show to all players
+        // Show personalized messages to each player
         for (Player player : Bukkit.getOnlinePlayers()) {
+            String playerTeam = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            boolean isWinner = (winningTeam.equals("HUNTER") && "Hunter".equals(playerTeam)) ||
+                              (winningTeam.equals("RUNNER") && "Runner".equals(playerTeam));
+            
+            Component title = isWinner ? 
+                lang.getComponent("death.you-win-title") : 
+                lang.getComponent("death.you-lose-title");
+            NamedTextColor color = isWinner ? winColor : loseColor;
+            
+            // Create title with timings
+            Title gameTitle = Title.title(
+                title,
+                subtitle,
+                Title.Times.times(
+                    Duration.ofMillis(500),  // Fade in
+                    Duration.ofSeconds(5),    // Stay
+                    Duration.ofSeconds(2)     // Fade out
+                )
+            );
+            
             player.showTitle(gameTitle);
             player.sendMessage(Component.text(""));
             player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
             player.sendMessage(lang.getComponent("dragon.game-over"));
             player.sendMessage(Component.text(""));
-            // Localize team display
-            String teamLabel = team.equals("HUNTER") ? lang.getMessage("death.winner-hunters") : lang.getMessage("death.winner-runners");
-            player.sendMessage(lang.getComponent("dragon.winner")
-                    .append(Component.text("TEAM " + teamLabel, color, TextDecoration.BOLD)));
+            player.sendMessage(subtitle);
+            player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
+            player.sendMessage(Component.text(""));
+            
+            // Play victory sound
+            player.playSound(player.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+        }
+    }
+    
+    /**
+     * Check if all streamers are dead (viewers win)
+     */
+    private void checkConnunityHuntWinCondition() {
+        Set<UUID> streamers = plugin.getDataManager().getPlayersInTeam("Streamer");
+        
+        boolean allStreamersDead = true;
+        for (UUID streamerId : streamers) {
+            Player streamer = Bukkit.getPlayer(streamerId);
+            if (streamer != null && streamer.isOnline() && streamer.getGameMode() != GameMode.SPECTATOR) {
+                allStreamersDead = false;
+                break;
+            }
+        }
+        
+        if (allStreamersDead) {
+            // Viewers win!
+            announceConnunityHuntWinner("VIEWER");
+        }
+    }
+    
+    /**
+     * Announce the winning team for Connunity Hunt
+     */
+    private void announceConnunityHuntWinner(String winningTeam) {
+        // Stop the timer
+        plugin.getTimerManager().stop();
+        
+        // Stop connunity hunt manager
+        plugin.getConnunityHuntManager().stop();
+        
+        Component subtitle;
+        NamedTextColor winColor = NamedTextColor.GREEN;
+        NamedTextColor loseColor = NamedTextColor.RED;
+        
+        if (winningTeam.equals("VIEWER")) {
+            subtitle = lang.getComponent("death.streamers-eliminated-subtitle");
+        } else {
+            subtitle = lang.getComponent("death.dragon-slain-subtitle");
+        }
+        
+        // Show personalized messages to each player
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            String playerTeam = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            boolean isWinner = (winningTeam.equals("VIEWER") && "Viewer".equals(playerTeam)) ||
+                              (winningTeam.equals("STREAMER") && "Streamer".equals(playerTeam));
+            
+            Component title = isWinner ? 
+                lang.getComponent("death.you-win-title") : 
+                lang.getComponent("death.you-lose-title");
+            NamedTextColor color = isWinner ? winColor : loseColor;
+            
+            // Create title with timings
+            Title gameTitle = Title.title(
+                title,
+                subtitle,
+                Title.Times.times(
+                    Duration.ofMillis(500),  // Fade in
+                    Duration.ofSeconds(5),    // Stay
+                    Duration.ofSeconds(2)     // Fade out
+                )
+            );
+            
+            player.showTitle(gameTitle);
+            player.sendMessage(Component.text(""));
+            player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
+            player.sendMessage(lang.getComponent("dragon.game-over"));
+            player.sendMessage(Component.text(""));
+            player.sendMessage(subtitle);
             player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
             player.sendMessage(Component.text(""));
             

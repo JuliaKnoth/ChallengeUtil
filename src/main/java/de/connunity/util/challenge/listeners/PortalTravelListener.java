@@ -45,7 +45,10 @@ public class PortalTravelListener implements Listener {
                                   fromWorldName.equals(speedrunWorldName + "_the_end");
         
         if (!isSpeedrunWorld) {
-            return; // Not in speedrun world, let default behavior happen
+            // Cancel the event to prevent Bukkit from auto-generating nether/end dimensions
+            // for non-speedrun worlds (e.g. waiting_room_nether, waiting_room_the_end)
+            event.setCancelled(true);
+            return;
         }
         
         // Handle Nether portal

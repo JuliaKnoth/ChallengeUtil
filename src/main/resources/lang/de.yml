@@ -73,6 +73,15 @@ start:
   min-teams-needed: "<yellow>  Mindestens 2 Teams benötigt. Aktuell: {count}"
   max-teams-exceeded: "<yellow>  Maximal 10 Teams erlaubt. Aktuell: {count}"
   
+  # Connunity Hunt mode
+  connunityhunt-no-teams-header: "<red>✗ Start nicht möglich! Connunity Hunt benötigt Spieler in beiden Teams."
+  connunityhunt-need-both-teams: "<yellow>  Mindestens ein Streamer und ein Viewer benötigt."
+  connunityhunt-announcement-header: "<gray><strikethrough>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  connunityhunt-title: "<gold><bold>  CONNUNITY HUNT"
+  connunityhunt-team-streamer: "<gray>  Team <#9146ff><bold>Streamer<gray>: <yellow>{count} Spieler"
+  connunityhunt-team-viewer: "<gray>  Team <gray><bold>Viewer<gray>: <yellow>{count} Spieler"
+  connunityhunt-announcement-footer: "<gray><strikethrough>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  
   teamrace-no-teams: "<red>✗ Start nicht möglich! Manhunt Race Modus ist aktiviert."
   teamrace-no-teams-hint: "<yellow>  Alle Spieler müssen zuerst ein Team wählen:"
   teamrace-must-choose: "<yellow><bold>⚠ Du musst ein Team wählen, bevor das Spiel starten kann!"
@@ -88,6 +97,10 @@ start:
   hunter-compass-unlock: "<gray>  • Nach 10 Minuten: Kompass"
   hunter-restrictions: "<gold><bold>⚠ JÄGER-Einschränkungen:"
   hunter-compass-time: "<gray>  • Nach 10 Minuten: Kompass"
+  
+  # Viewer restrictions
+  viewer-restrictions-header: "<gray><bold>⚠ VIEWER-Einschränkungen:"
+  viewer-headstart: "<yellow>  • Streamer haben 2 Minuten Vorsprung"
 
 # Pause Command
 pause:
@@ -155,6 +168,12 @@ team:
   teamrace-list-players: "<gray> ({count} Spieler)"
   teamrace-list-usage: "<yellow>Nutze <gold>/team <Teamname><yellow> zum Beitreten"
   teamrace-list-example: "<gray>Beispiel: <white>/team Rot"
+  
+  # Connunity Hunt mode
+  connunityhunt-auto-assigned: "<green>✓ Du wurdest automatisch Team {team} zugewiesen!"
+  connunityhunt-streamer-team: "<#9146ff><bold>Streamer"
+  connunityhunt-viewer-team: "<gray><bold>Viewer"
+  connunityhunt-no-switching: "<gray>  Teams werden automatisch basierend auf Berechtigungen zugewiesen."
 
 # Settings Command
 settings:
@@ -168,6 +187,13 @@ join:
   world-not-exist-hint: "<yellow>Bitte warte, bis ein Admin /fullreset ausführt."
   watch-mode: "<gray>Zuschauermodus aktiviert 👁"
   good-luck-emoji: "<gold>Viel Glück! ⚡"
+
+# Spectator Command
+spectator:
+  no-permission: "<red>✗ Du benötigst die challenge.host Berechtigung für diesen Befehl!"
+  not-connunity-hunt: "<red>✗ Dieser Befehl ist nur im Connunity Hunt Modus verfügbar!"
+  success: "<green>✓ Du bist jetzt ein Zuschauer!"
+  info: "<gray>  Du bist in keinem Team und kannst das Spiel frei beobachten."
 
 # Full Reset Command
 fullreset:
@@ -481,6 +507,26 @@ manhunt:
   hunter-get-compass-title: "<aqua><bold>✓ KOMPASS FREIGESCHALTET!"
   hunter-get-compass-sub: "<yellow>Rechtsklick zum Tracking!"
 
+# Connunity Hunt
+connunityhunt:
+  blindness-over: "<green>✓ Vorsprung vorbei! Du kannst dich jetzt bewegen und jagen!"
+  blindness-remaining: "<yellow>⏳ Vorsprung aktiv! Noch {seconds} Sekunden..."
+  compass-charged: "<green>✨ Kompass ist aufgeladen!"
+  streamers-glowing: "<aqua>✨ Streamer leuchten jetzt!"
+  you-are-glowing: "<red><bold>⚠ Du leuchtest!"
+  streamers-in-nether: "<light_purple>✦ Streamer sind im Nether"
+  streamers-in-end: "<dark_purple>✦ Streamer sind im End"
+  streamers-in-overworld: "<green>✦ Streamer sind in der Oberwelt"
+  
+  # Kompass-Nachrichten
+  compass-name: "<#9146ff><bold>Streamer-Tracker"
+  compass-charged-status: "<green>✓ Aufgeladen!"
+  compass-charging-status: "<yellow>⏳ Lädt auf..."
+  compass-ready-hint: "<gray>Rechtsklick, wenn bereit"
+  compass-track-streamers: "<gray>Rechtsklick zum Verfolgen von Streamern"
+  compass-show-streamers: "<gray>Rechtsklick um Streamer anzuzeigen."
+  compass-loading: "<yellow>⏳ Lädt..."
+
 # Manhunt Race
 teamrace:
   team-win: "<gold><bold>═══════════════════════════════\n{team}<bold> HAT GEWONNEN!\n<yellow>Der Enderdrache wurde besiegt!\n<gold><bold>═══════════════════════════════"
@@ -534,6 +580,8 @@ placeholders:
   runner-prefix: "<light_purple><bold>[RUNNER] "
   hunter-prefix: "<gold><bold>[HUNTER] "
   spectator-prefix: "<gray>[ZUSCHAUER] "
+  streamer-prefix: "<#9146ff><bold>[STREAMER] "
+  viewer-prefix: "<gray><bold>[VIEWER] "
 
 # Manhunt Manager
 manhunt:
@@ -559,11 +607,14 @@ manhunt:
 
 # Manhunt Race Manager
 teamrace:
-  team-won-title: "<bold>TEAM {team} GEWONNEN!"
+  you-win-title: "<green><bold>DU GEWINNST!"
+  you-lose-title: "<red><bold>DU VERLIERST!"
   dragon-defeated-subtitle: "<gray>hat den Enderdrachen besiegt!"
   game-over-divider: "<gold><strikethrough>═══════════════════════════════════"
   game-over-title: "<bold>         SPIEL VORBEI         "
   winner-label: "<gray>    Gewinner: "
+  your-team-won: "<green>Dein Team hat den Enderdrachen besiegt!"
+  enemy-team-won: "<red>Team {team} hat den Enderdrachen zuerst besiegt!"
   
   # Compass messages
   compass-name: "<bold>Team-Tracker"
@@ -574,6 +625,22 @@ teamrace:
   compass-switch-hint: "<yellow>Rechtsklick zum Teamwechsel"
   switched-tracking: "<gold>Verfolge jetzt: "
   compass-now-points-to-portal: "<light_purple><bold>⚠ Kompass zeigt jetzt auf das Endportal! ⚠"
+  
+  # Team selection menu
+  menu-item:
+    name: "<gold><bold>⚔ Teamauswahl ⚔"
+    lore1: "<gray>Öffne das Teamauswahl-Menü"
+    lore2: "<gray>um dein Team zu wählen!"
+    hint: "<yellow>Rechtsklick zum Öffnen"
+    mode-not-active: "<red>Team Race Modus ist nicht aktiv!"
+  
+  # Team selection GUI
+  gui:
+    title: "<gold><bold>Wähle dein Team"
+    members: "<gray>Mitglieder: <white>{count}"
+    current-team: "<green><bold>✓ Aktuelles Team"
+    click-to-join: "<yellow>Klicken zum Beitreten!"
+    already-in-team: "<yellow>Du bist bereits in diesem Team!"
 
 # Player Death Messages
 death:
@@ -582,15 +649,18 @@ death:
   respawn-disabled-spectator: "<gray>Respawn deaktiviert - du bist jetzt Zuschauer"
   divider: "<dark_red>═══════════════════════════════════"
   
-  # Manhunt victory
-  hunters-won-title: "<gold><bold>TEAM HUNTER HAT GEWONNEN!"
-  hunters-won-subtitle: "<yellow>Alle Runner wurden eliminiert"
-  runners-won-title: "<light_purple><bold>TEAM RUNNER HAT GEWONNEN!"
-  runners-won-subtitle: "<dark_purple>Der Enderdrache wurde besiegt!"
+  # Win/Lose messages
+  you-win-title: "<green><bold>DU GEWINNST!"
+  you-lose-title: "<red><bold>DU VERLIERST!"
+  hunters-eliminated-subtitle: "<yellow>Alle Runner wurden eliminiert"
+  dragon-slain-subtitle: "<light_purple>Der Enderdrache wurde besiegt!"
+  streamers-eliminated-subtitle: "<yellow>Alle Streamer wurden eliminiert"
   
   # Team labels
   winner-hunters: "HUNTER"
   winner-runners: "RUNNER"
+  winner-viewers: "VIEWER"
+  winner-streamers: "STREAMER"
 
 # Ender Dragon Death
 dragon:
@@ -598,6 +668,10 @@ dragon:
   hunters-won-subtitle: "<yellow>All runners have been eliminated"
   runners-won-title: "<light_purple><bold>TEAM RUNNERS WON!"
   runners-won-subtitle: "<dark_purple>The Ender Dragon has been slain!"
+  everyone-wins-title: "<gold><bold>ENDERDRACHE BESIEGT!"
+  everyone-wins-subtitle: "<yellow>Alle gewinnen!"
+  dragon-defeated-message: "<yellow>Der Enderdrache wurde besiegt!"
+  everyone-wins-message: "<green><bold>Alle gewinnen!"
   game-over: "<bold>         SPIEL VORBEI         "
   winner: "<gray>    Gewinner: "
 
@@ -609,6 +683,8 @@ chunkitem:
 # Movement/PvP Restrictions
 restrictions:
   cannot-move-yet: "<yellow>⚠ You cannot move yet! Wait <red>{seconds}s<yellow> (Blindness period)"
+  cannot-break-blocks-yet: "<yellow>⚠ Du kannst noch keine Blöcke abbauen! Warte <red>{seconds}s<yellow> (Vorsprung-Phase)"
+  cannot-pickup-items-yet: "<yellow>⚠ Du kannst noch keine Items aufheben! Warte <red>{seconds}s<yellow> (Vorsprung-Phase)"
   pvp-disabled: "<red>✗ PvP ist deaktiviert bis die Challenge startet!"
   cannot-damage-teammate: "<red>✗ You cannot damage your teammate!"
   cannot-damage-teammate-teamrace: "<red>✗ Du kannst deinen Teamkollegen nicht schaden!"
@@ -806,7 +882,7 @@ gui:
       
       custom_end_fight: "Jage das Ei - Eigener End-Kampf"
       custom_end_fight_hint1: "<aqua><italic>Drachenei muss gesammelt werden"
-      custom_end_fight_hint2: "<gray><italic>Ei-Träger wird Boss mit 40 HP"
+      custom_end_fight_hint2: "<gray><italic>Ei-Träger wird Boss mit 60 HP"
       custom_end_fight_hint3: "<gold><italic>Alle anderen jagen den Ei-Träger"
       
       team_race_mode: "Manhunt Race - 2-10 Teams"
@@ -814,8 +890,14 @@ gui:
       teamrace_hint2: "<gray><italic>2-10 Teams rennen zum Enderdrachen"
       teamrace_hint3: "<gold><italic>Kompasse zeigen zum nächsten Team"
       teamrace_warning_manhunt: "<red><bold>⚠ Manhunt-Modus ist aktiv!"
-      teamrace_auto_disable: "<yellow><italic>Wird automatisch deaktiviert"
-      
+      teamrace_auto_disable: "<yellow><italic>Wird automatisch deaktiviert"      
+      connunity_hunt_mode: "Connunity Hunt - Streamer vs Viewer"
+      connunityhunt_hint1: "<aqua><italic>Automatische Teams nach Berechtigung"
+      connunityhunt_hint2: "<gold><italic>Streamer: vup.creator / challenge.creator"
+      connunityhunt_hint3: "<blue><italic>Viewer: alle anderen"
+      connunityhunt_warning_manhunt: "<red><bold>⚠ Manhunt Modus ist aktiv!"
+      connunityhunt_warning_teamrace: "<red><bold>⚠ Manhunt Race ist aktiv!"
+      connunityhunt_auto_disable: "<yellow><italic>Wird automatisch deaktiviert"      
       chunk_items: "Zufälliges Item pro Chunk erhalten"
       block_break_randomizer: "Block Break Randomizer"
       block_break_randomizer_hint1: "<aqua><italic>Blöcke droppen zufällige Items"
@@ -838,9 +920,12 @@ endfight:
   chase-egg-subtitle: "<yellow>Sammle das Drachenei, um der Boss zu werden!"
   boss-bar-title: "<light_purple><bold>🥚 {player}"
   you-are-boss: "<light_purple><bold>⚡ DU BIST DER EI-TRÄGER!"
-  survive-instructions: "<yellow>  Überlebe mit 40 HP! Alle anderen jagen dich!"
+  survive-instructions: "<yellow>  Überlebe mit 60 HP! Alle anderen jagen dich!"
   defeat-boss: "<gold><bold>⚔ BESIEGE {player}!"
-  team-won: "<gold><bold>✓ TEAM {team} HAT GEWONNEN!"
+  you-win-title: "<green><bold>DU GEWINNST!"
+  you-lose-title: "<red><bold>DU VERLIERST!"
+  your-team-won: "<green>Dein Team ist mit dem Drachenei entkommen!"
+  enemy-team-won: "<red>Team {team} ist mit dem Drachenei entkommen!"
   team-escaped: "<yellow>Ihr seit mit dem Drachenei in die Oberwelt entkommen!"
   new-holder: "<light_purple><bold>⚡ {player} ist jetzt der Ei-Träger!"
   team-time-remaining: "<yellow>  Team {team} muss noch {time} überleben!"

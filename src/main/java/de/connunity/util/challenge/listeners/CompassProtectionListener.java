@@ -1,6 +1,7 @@
 package de.connunity.util.challenge.listeners;
 
 import de.connunity.util.challenge.ChallengeUtil;
+import de.connunity.util.challenge.connunityhunt.ConnunityHuntManager;
 import de.connunity.util.challenge.lang.LanguageManager;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -13,7 +14,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Prevents hunters and team race players from dropping their tracking compass and ensures they keep it on death
+ * Prevents hunters, team race players, and viewers from dropping their tracking compass and ensures they keep it on death
  */
 public class CompassProtectionListener implements Listener {
     
@@ -54,6 +55,15 @@ public class CompassProtectionListener implements Listener {
             player.sendMessage(lang.getComponent("compass.cannot-drop"));
             return;
         }
+        
+        // Check if connunity hunt mode is enabled
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        if (connunityHuntEnabled != null && connunityHuntEnabled && ConnunityHuntManager.TEAM_VIEWER.equals(team)) {
+            // Prevent viewers from dropping compass in connunity hunt mode
+            event.setCancelled(true);
+            player.sendMessage(lang.getComponent("compass.cannot-drop"));
+            return;
+        }
     }
     
     @EventHandler(priority = EventPriority.HIGH)
@@ -73,6 +83,14 @@ public class CompassProtectionListener implements Listener {
         Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
         if (teamRaceEnabled != null && teamRaceEnabled && team != null && !team.isEmpty()) {
             // Remove compass from drops for team race players
+            event.getDrops().removeIf(item -> item.getType() == Material.COMPASS);
+            return;
+        }
+        
+        // Check if connunity hunt mode is enabled
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        if (connunityHuntEnabled != null && connunityHuntEnabled && ConnunityHuntManager.TEAM_VIEWER.equals(team)) {
+            // Remove compass from drops for viewers in connunity hunt mode
             event.getDrops().removeIf(item -> item.getType() == Material.COMPASS);
             return;
         }
@@ -120,6 +138,27 @@ public class CompassProtectionListener implements Listener {
                 
                 if (!hasCompass) {
                     plugin.getTeamRaceManager().giveCompassToPlayer(player, team);
+                }
+            }, 1L); // 1 tick delay
+            return;
+        }
+        
+        // Check if connunity hunt mode is enabled
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        if (connunityHuntEnabled != null && connunityHuntEnabled && ConnunityHuntManager.TEAM_VIEWER.equals(team)) {
+            // Give compass back to viewers in connunity hunt mode
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                // Check if viewer already has a compass
+                boolean hasCompass = false;
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && item.getType() == Material.COMPASS) {
+                        hasCompass = true;
+                        break;
+                    }
+                }
+                
+                if (!hasCompass) {
+                    plugin.getConnunityHuntManager().giveCompassToViewer(player);
                 }
             }, 1L); // 1 tick delay
             return;

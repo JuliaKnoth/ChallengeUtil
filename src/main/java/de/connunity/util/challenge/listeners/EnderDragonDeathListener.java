@@ -48,9 +48,11 @@ public class EnderDragonDeathListener implements Listener {
             return;
         }
         
-        // Check if custom end fight is enabled
+        // Check if custom end fight is enabled AND team race mode is enabled
         Boolean customEndFightEnabled = plugin.getDataManager().getSavedChallenge("custom_end_fight");
-        if (customEndFightEnabled != null && customEndFightEnabled) {
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (customEndFightEnabled != null && customEndFightEnabled && 
+            teamRaceEnabled != null && teamRaceEnabled) {
             handleCustomEndFight(event);
             return;
         }
@@ -60,7 +62,19 @@ public class EnderDragonDeathListener implements Listener {
         if (manhuntEnabled != null && manhuntEnabled) {
             // Runners win!
             announceWinner("RUNNER");
+            return;
         }
+        
+        // Check if connunity hunt mode is enabled
+        Boolean connunityHuntEnabled = plugin.getDataManager().getSavedChallenge("connunity_hunt_mode");
+        if (connunityHuntEnabled != null && connunityHuntEnabled) {
+            // Streamers win!
+            announceWinner("STREAMER");
+            return;
+        }
+        
+        // No specific mode enabled - everyone wins
+        announceEveryoneWins();
     }
     
     /**
@@ -213,7 +227,9 @@ public class EnderDragonDeathListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onPortalCreate(PortalCreateEvent event) {
         Boolean customEndFightEnabled = plugin.getDataManager().getSavedChallenge("custom_end_fight");
-        if (customEndFightEnabled == null || !customEndFightEnabled) {
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (customEndFightEnabled == null || !customEndFightEnabled || 
+            teamRaceEnabled == null || !teamRaceEnabled) {
             return;
         }
         
@@ -251,7 +267,9 @@ public class EnderDragonDeathListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onPortalForm(BlockFromToEvent event) {
         Boolean customEndFightEnabled = plugin.getDataManager().getSavedChallenge("custom_end_fight");
-        if (customEndFightEnabled == null || !customEndFightEnabled) {
+        Boolean teamRaceEnabled = plugin.getDataManager().getSavedChallenge("team_race_mode");
+        if (customEndFightEnabled == null || !customEndFightEnabled || 
+            teamRaceEnabled == null || !teamRaceEnabled) {
             return;
         }
         
@@ -276,26 +294,80 @@ public class EnderDragonDeathListener implements Listener {
     /**
      * Announce the winning team
      */
-    private void announceWinner(String team) {
+    private void announceWinner(String winningTeam) {
         // Stop the timer
         plugin.getTimerManager().stop();
         
         // Stop manhunt manager
         plugin.getManhuntManager().stop();
         
-        Component title;
-        Component subtitle;
-        NamedTextColor color;
+        // Stop connunity hunt manager
+        plugin.getConnunityHuntManager().stop();
         
-        if (team.equals("HUNTER")) {
-            title = lang.getComponent("death.hunters-won-title");
-            subtitle = lang.getComponent("death.hunters-won-subtitle");
-            color = NamedTextColor.GOLD;
+        Component subtitle;
+        NamedTextColor winColor = NamedTextColor.GREEN;
+        NamedTextColor loseColor = NamedTextColor.RED;
+        
+        if (winningTeam.equals("HUNTER")) {
+            subtitle = lang.getComponent("death.hunters-eliminated-subtitle");
+        } else if (winningTeam.equals("STREAMER")) {
+            subtitle = lang.getComponent("death.dragon-slain-subtitle");
         } else {
-            title = lang.getComponent("death.runners-won-title");
-            subtitle = lang.getComponent("death.runners-won-subtitle");
-            color = NamedTextColor.LIGHT_PURPLE;
+            subtitle = lang.getComponent("death.dragon-slain-subtitle");
         }
+        
+        // Show personalized messages to each player
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            String playerTeam = plugin.getDataManager().getPlayerTeam(player.getUniqueId());
+            boolean isWinner = false;
+            
+            if (winningTeam.equals("HUNTER") && "Hunter".equals(playerTeam)) {
+                isWinner = true;
+            } else if (winningTeam.equals("RUNNER") && "Runner".equals(playerTeam)) {
+                isWinner = true;
+            } else if (winningTeam.equals("STREAMER") && "Streamer".equals(playerTeam)) {
+                isWinner = true;
+            }
+            
+            Component title = isWinner ? 
+                lang.getComponent("death.you-win-title") : 
+                lang.getComponent("death.you-lose-title");
+            NamedTextColor color = isWinner ? winColor : loseColor;
+            
+            // Create title with timings
+            Title gameTitle = Title.title(
+                title,
+                subtitle,
+                Title.Times.times(
+                    Duration.ofMillis(500),  // Fade in
+                    Duration.ofSeconds(5),    // Stay
+                    Duration.ofSeconds(2)     // Fade out
+                )
+            );
+            
+            player.showTitle(gameTitle);
+            player.sendMessage(Component.text(""));
+            player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
+            player.sendMessage(lang.getComponent("dragon.game-over"));
+            player.sendMessage(Component.text(""));
+            player.sendMessage(subtitle);
+            player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
+            player.sendMessage(Component.text(""));
+            
+            // Play victory sound
+            player.playSound(player.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+        }
+    }
+    
+    /**
+     * Announce that everyone wins (no team mode enabled)
+     */
+    private void announceEveryoneWins() {
+        // Stop the timer
+        plugin.getTimerManager().stop();
+        
+        Component title = lang.getComponent("dragon.everyone-wins-title");
+        Component subtitle = lang.getComponent("dragon.everyone-wins-subtitle");
         
         // Create title with timings
         Title gameTitle = Title.title(
@@ -312,12 +384,12 @@ public class EnderDragonDeathListener implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.showTitle(gameTitle);
             player.sendMessage(Component.text(""));
-            player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
+            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD, TextDecoration.STRIKETHROUGH));
             player.sendMessage(lang.getComponent("dragon.game-over"));
             player.sendMessage(Component.text(""));
-            player.sendMessage(lang.getComponent("dragon.winner")
-                    .append(Component.text("TEAM " + team, color, TextDecoration.BOLD)));
-            player.sendMessage(Component.text("═══════════════════════════════════", color, TextDecoration.STRIKETHROUGH));
+            player.sendMessage(lang.getComponent("dragon.dragon-defeated-message"));
+            player.sendMessage(lang.getComponent("dragon.everyone-wins-message"));
+            player.sendMessage(Component.text("═══════════════════════════════════", NamedTextColor.GOLD, TextDecoration.STRIKETHROUGH));
             player.sendMessage(Component.text(""));
             
             // Play victory sound
